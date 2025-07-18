@@ -2,6 +2,7 @@
 
 namespace Tyrads\TyradsSdk;
 
+use Tyrads\TyradsSdk\Contract\AuthenticationRequest;
 use Tyrads\TyradsSdk\Enum\EnvVar;
 use Tyrads\TyradsSdk\Helper\GuzzleCompatibility;
 
@@ -47,40 +48,21 @@ class TyrAdsSdk
 
 
     public function authenticate(
-        $publisherUserId,
-        $age,
-        $gender
+        AuthenticationRequest $request
     ) {
-        // validate $publisherUserId
-        if (empty($publisherUserId)) {
-            throw new \InvalidArgumentException('Publisher User ID cannot be empty.');
-        }
-
-        // validate $age
-        if (!is_int($age) || $age < 0) {
-            throw new \InvalidArgumentException('Age must be a non-negative integer.');
-        }
-
-        // validate $gender must be either 1 or 2
-        if (!in_array($gender, [1, 2], true)) {
-            throw new \InvalidArgumentException('Gender must be either 1 (male) or 2 (female).');
-        }
+        $request->validate();
 
         // Prepare the authentication data
-        $data = [
-            'publisherUserId' => $publisherUserId,
-            'age' => $age,
-            'gender' => $gender,
-        ];
+        $data = $request->getParsedData();
 
         // Send the authentication request
         $response = $this->http->postJson('/auth', $data);
         if (isset($response['json']['data']['token'])) {
             return new Contract\AuthenticationSign(
                 $response['json']['data']['token'],
-                $publisherUserId,
-                $age,
-                $gender
+                $request['publisherUserId'],
+                $request['age'],
+                $request['gender']
             );
         }
 
