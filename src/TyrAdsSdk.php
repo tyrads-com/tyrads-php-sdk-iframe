@@ -75,9 +75,9 @@ class TyrAdsSdk
 
         // Send the authentication request
         $response = $this->http->postJson('/auth', $data);
-        if (isset($response['data']['token'])) {
+        if (isset($response['json']['data']['token'])) {
             return new Contract\AuthenticationSign(
-                $response['data']['token'],
+                $response['json']['data']['token'],
                 $publisherUserId,
                 $age,
                 $gender
