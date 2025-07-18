@@ -68,7 +68,7 @@ class TyrAdsSdk
 
         // Prepare the authentication data
         $data = [
-            'publisher_user_id' => $publisherUserId,
+            'publisherUserId' => $publisherUserId,
             'age' => $age,
             'gender' => $gender,
         ];
