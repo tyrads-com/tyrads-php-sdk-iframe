@@ -1,7 +1,7 @@
 {
   "name": "tyrads/tyrads-sdk",
   "description": "Official TyrAds SDK for PHP",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "type": "library",
   "license": "MIT",
   "authors": [
