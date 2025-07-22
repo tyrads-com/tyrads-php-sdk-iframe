@@ -31,7 +31,7 @@ class Configuration
      *
      * @var string
      */
-    const SDK_PLATFORM = 'PHP';
+    const SDK_PLATFORM = 'Web';
 
     /**
      * The API key for authentication.
