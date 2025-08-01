@@ -34,9 +34,8 @@ class TyrAdsSdk
      *
      * @param \Tyrads\TyradsSdk\Configuration $config
      */
-    public function __construct(
-        Configuration $config,
-    ) {
+    public function __construct(Configuration $config)
+    {
         // Initialize Guzzle client based on Guzzle version
         $guzzle = GuzzleCompatibility::isUsingGuzzle5()
             ? new \GuzzleHttp\Client()
@@ -47,9 +46,8 @@ class TyrAdsSdk
     }
 
 
-    public function authenticate(
-        AuthenticationRequest $request
-    ) {
+    public function authenticate(AuthenticationRequest $request)
+    {
         $request->validate();
 
         // Prepare the authentication data
