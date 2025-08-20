@@ -160,22 +160,50 @@ jobs:
         composer validate --strict
         php .github/test-compatibility.php
     
-    - name: Update Packagist webhook
+    - name: Trigger Packagist Update
       if: success()
       run: |
         echo "Triggering Packagist update..."
-        # Packagist will automatically detect and update the package when:
-        # 1. A GitHub webhook is configured on the repository
-        # 2. Changes are pushed to tracked branches (main)
-        # 3. New releases/tags are created
         
-        # If you want to manually trigger an update via API:
-        # curl -XPOST -H'Content-type: application/json' 'https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}&apiToken=${{ secrets.PACKAGIST_API_TOKEN }}' -d'{"repository":{"url":"REPO_URL"}}'
+        # Extract repository URL for Packagist API
+        REPO_URL="https://github.com/${{ github.repository }}"
         
-        echo "Package should be automatically updated on Packagist via webhook"
-        echo "Repository: https://github.com/${{ github.repository }}"
-        echo "Commit: ${{ github.sha }}"
-        echo "Branch: ${{ github.ref_name }}"
+        # Check if Packagist credentials are available
+        if [ -z "${{ secrets.PACKAGIST_USERNAME }}" ] || [ -z "${{ secrets.PACKAGIST_API_TOKEN }}" ]; then
+          echo "⚠️ PACKAGIST_USERNAME or PACKAGIST_API_TOKEN secrets not configured"
+          echo "📋 To enable automatic Packagist updates, add these repository secrets:"
+          echo "   - PACKAGIST_USERNAME: Your Packagist username"
+          echo "   - PACKAGIST_API_TOKEN: Your Packagist API token"
+          echo "📦 Package will need manual update on Packagist: https://packagist.org/packages/tyrads/tyrads-sdk"
+          exit 0
+        fi
+        
+        # Trigger Packagist update via API
+        echo "Calling Packagist API to update package..."
+        RESPONSE=$(curl -s -w "%{http_code}" -o packagist_response.json \
+          -XPOST \
+          -H 'Content-type: application/json' \
+          "https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}&apiToken=${{ secrets.PACKAGIST_API_TOKEN }}" \
+          -d "{\"repository\":{\"url\":\"$REPO_URL\"}}")
+        
+        HTTP_CODE="${RESPONSE: -3}"
+        
+        if [ "$HTTP_CODE" = "202" ]; then
+          echo "✅ Successfully triggered Packagist update"
+          echo "📦 Package: tyrads/tyrads-sdk"
+          echo "🔗 Packagist: https://packagist.org/packages/tyrads/tyrads-sdk"
+          if [ -f packagist_response.json ]; then
+            echo "📋 Response:"
+            cat packagist_response.json
+          fi
+        else
+          echo "❌ Failed to trigger Packagist update (HTTP $HTTP_CODE)"
+          if [ -f packagist_response.json ]; then
+            echo "📋 Error response:"
+            cat packagist_response.json
+          fi
+          echo "🔗 Manual update may be needed: https://packagist.org/packages/tyrads/tyrads-sdk"
+        fi
 
   create-release:
     runs-on: ubuntu-latest
@@ -229,7 +257,7 @@ jobs:
         echo "\`\`\`" >> release_notes.md
         echo "" >> release_notes.md
         echo "### Compatibility" >> release_notes.md
-        echo "- PHP 5.5+ through PHP 8.3" >> release_notes.md
+        echo "- PHP 5.5+ through PHP 8.4" >> release_notes.md
         echo "- Guzzle HTTP client support (versions 5.0, 6.0, 7.0)" >> release_notes.md
         echo "" >> release_notes.md
         echo "### Documentation" >> release_notes.md

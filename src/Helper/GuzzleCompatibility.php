@@ -22,13 +22,13 @@ class GuzzleCompatibility
                 // Fall through to next method
             }
         }
-        
+
         // Method 2: Try to detect from class existence (more reliable for older setups)
         if (class_exists('\GuzzleHttp\Collection')) {
             // Guzzle 5.x has the Collection class, 6.x doesn't
             return true;
         }
-        
+
         // Method 3: Try to detect from Client class methods
         if (class_exists('\GuzzleHttp\Client')) {
             $reflection = new \ReflectionClass('\GuzzleHttp\Client');
@@ -37,7 +37,7 @@ class GuzzleCompatibility
                 return true;
             }
         }
-        
+
         // Method 4: Fallback - assume Guzzle 6+ if we can't determine
         // This is safer for modern installations
         return false;

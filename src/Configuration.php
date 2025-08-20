@@ -114,7 +114,7 @@ class Configuration
                 return $composer['version'];
             }
         }
-        
+
         // For Packagist installations, try to get version from Composer runtime
         // Note: Composer\InstalledVersions is only available in Composer 2.0+
         if (class_exists('\Composer\InstalledVersions')) {
@@ -125,7 +125,7 @@ class Configuration
                 // Ignore and fall through to default
             }
         }
-        
+
         // Fallback for development or when version cannot be determined
         return 'dev-main';
     }
