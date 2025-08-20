@@ -54,7 +54,7 @@ class Configuration
      */
     protected $apiSecret;
 
-    public function __construct(string $apiKey, string $apiSecret, $language = 'en')
+    public function __construct($apiKey, $apiSecret, $language = 'en')
     {
         $this->apiKey = $apiKey;
         $this->apiSecret = $apiSecret;
@@ -66,7 +66,7 @@ class Configuration
      *
      * @return string
      */
-    public function getApiKey(): string
+    public function getApiKey()
     {
         return $this->apiKey;
     }
@@ -76,7 +76,7 @@ class Configuration
      *
      * @return string
      */
-    public function getApiSecret(): string
+    public function getApiSecret()
     {
         return $this->apiSecret;
     }
@@ -86,7 +86,7 @@ class Configuration
      *
      * @return string
      */
-    public function getParsedApiUrl(): string
+    public function getParsedApiUrl()
     {
         return self::SDK_API_BASE_URL . '/' . self::SDK_API_VERSION;
     }
@@ -96,7 +96,7 @@ class Configuration
      *
      * @return string
      */
-    public function getSdkPlatform(): string
+    public function getSdkPlatform()
     {
         return self::SDK_PLATFORM;
     }
@@ -105,7 +105,7 @@ class Configuration
      * Get the SDK Version from composer.json file.
      * @return string
      */
-    public function getSdkVersion(): string
+    public function getSdkVersion()
     {
         // Try to get version from composer.json if it exists (for development)
         if (file_exists(__DIR__ . '/../composer.json')) {
@@ -116,9 +116,11 @@ class Configuration
         }
         
         // For Packagist installations, try to get version from Composer runtime
+        // Note: Composer\InstalledVersions is only available in Composer 2.0+
         if (class_exists('\Composer\InstalledVersions')) {
             try {
-                return \Composer\InstalledVersions::getVersion('tyrads/tyrads-sdk') ?: 'dev-main';
+                $version = \Composer\InstalledVersions::getVersion('tyrads/tyrads-sdk');
+                return $version ?: 'dev-main';
             } catch (\Exception $e) {
                 // Ignore and fall through to default
             }
@@ -133,7 +135,7 @@ class Configuration
      *
      * @return string
      */
-    public function getLanguage(): string
+    public function getLanguage()
     {
         return $this->language;
     }
@@ -143,7 +145,7 @@ class Configuration
      *
      * @return string
      */
-    public function getSdkIframeBaseUrl(): string
+    public function getSdkIframeBaseUrl()
     {
         return self::SDK_IFRAME_BASE_URL;
     }

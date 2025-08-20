@@ -22,7 +22,7 @@ class TyrAdsSdk
         $apiKey = null,
         $apiSecret = null,
         $language = 'en'
-    ): self {
+    ) {
         $env = new Env();
 
         $config = new Configuration($apiKey ?: $env->get(EnvVar::TYRADS_API_KEY), $apiSecret ?: $env->get(EnvVar::TYRADS_API_SECRET), $language);

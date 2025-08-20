@@ -93,6 +93,9 @@ jobs:
     - name: Run compatibility test
       run: php -d error_reporting='E_ERROR | E_PARSE' .github/test-compatibility.php
     
+    - name: Run legacy compatibility test
+      run: php -d error_reporting='E_ERROR | E_PARSE' .github/test-legacy-compat.php
+    
     - name: Run test suite (modern PHP)
       if: matrix.php-version >= '7.2'
       run: php -d error_reporting='E_ERROR | E_PARSE' vendor/bin/phpunit
