@@ -170,7 +170,7 @@ jobs:
         # 3. New releases/tags are created
         
         # If you want to manually trigger an update via API:
-        # curl -XPOST -H'Content-type: application/json' 'https://packagist.org/api/update-package?username=USERNAME&apiToken=API_TOKEN' -d'{"repository":{"url":"REPO_URL"}}'
+        # curl -XPOST -H'Content-type: application/json' 'https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}&apiToken=${{ secrets.PACKAGIST_API_TOKEN }}' -d'{"repository":{"url":"REPO_URL"}}'
         
         echo "Package should be automatically updated on Packagist via webhook"
         echo "Repository: https://github.com/${{ github.repository }}"
