@@ -4,7 +4,6 @@ namespace Tyrads\TyradsSdk;
 
 class Configuration
 {
-
     /**
      * The base URL for the TyrAds SDK Iframe.
      *

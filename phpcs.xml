@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<ruleset name="TyrAds SDK Coding Standard">
+    <description>PHP CodeSniffer configuration for TyrAds SDK</description>
+
+    <!-- Include the PSR-12 coding standard -->
+    <rule ref="PSR12"/>
+
+    <!-- Paths to check -->
+    <file>src/</file>
+
+    <!-- Exclude vendor directory -->
+    <exclude-pattern>vendor/</exclude-pattern>
+
+    <!-- Show progress -->
+    <arg value="p"/>
+
+    <!-- Use colors in output -->
+    <arg name="colors"/>
+
+    <!-- Show sniff codes in all reports -->
+    <arg value="s"/>
+
+    <!-- Configure specific rules for PHP 5.5+ compatibility -->
+    <rule ref="Generic.PHP.DisallowShortOpenTag"/>
+    <rule ref="Generic.Files.ByteOrderMark"/>
+    <rule ref="Generic.NamingConventions.UpperCaseConstantName"/>
+    
+    <!-- Allow array() syntax for PHP 5.5 compatibility -->
+    <rule ref="Generic.Arrays.DisallowLongArraySyntax">
+        <severity>0</severity>
+    </rule>
+
+    <!-- Disable constant visibility rule for PHP 5.5 compatibility -->
+    <rule ref="PSR12.Properties.ConstantVisibility">
+        <severity>0</severity>
+    </rule>
+
+    <!-- Line length limit -->
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="120"/>
+            <property name="absoluteLineLimit" value="0"/>
+        </properties>
+    </rule>
+
+    <!-- Ensure proper indentation -->
+    <rule ref="Generic.WhiteSpace.ScopeIndent">
+        <properties>
+            <property name="indent" value="4"/>
+            <property name="tabIndent" value="false"/>
+        </properties>
+    </rule>
+</ruleset>
