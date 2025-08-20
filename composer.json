@@ -3,13 +3,22 @@
   "description": "Official TyrAds SDK for PHP - Compatible with PHP 5.5+ through PHP 8.4",
   "type": "library",
   "license": "MIT",
-  "keywords": ["tyrads", "sdk", "api", "offerwall", "iframe", "php5", "php7", "php8"],
+  "keywords": [
+    "tyrads",
+    "sdk",
+    "api",
+    "offerwall",
+    "iframe",
+    "php5",
+    "php7",
+    "php8"
+  ],
   "homepage": "https://tyrads.com",
   "readme": "README.md",
   "support": {
-    "issues": "https://github.com/tyrads/tyrads-php-sdk-iframe/issues",
-    "source": "https://github.com/tyrads/tyrads-php-sdk-iframe",
-    "docs": "https://github.com/tyrads/tyrads-php-sdk-iframe/blob/main/README.md"
+    "issues": "https://github.com/tyrads-com/tyrads-php-sdk-iframe/issues",
+    "source": "https://github.com/tyrads-com/tyrads-php-sdk-iframe",
+    "docs": "https://github.com/tyrads-com/tyrads-php-sdk-iframe/blob/main/README.md"
   },
   "authors": [
     {

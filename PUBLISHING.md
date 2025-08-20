@@ -51,6 +51,7 @@ php .github/test-compatibility.php
 
 **Option A: Automatic Versioning (Recommended)**
 Push to main branch - versions are automatically determined by commit messages:
+
 ```bash
 git add .
 git commit -m "feat: add new authentication method"  # Creates minor version bump
@@ -58,22 +59,26 @@ git push origin main
 ```
 
 **Commit Message Conventions for Auto-Versioning:**
+
 - `feat:` or `feature:` → **minor** version bump (0.1.0 → 0.2.0)
-- `BREAKING:` or `major:` → **major** version bump (0.1.0 → 1.0.0)  
+- `BREAKING:` or `major:` → **major** version bump (0.1.0 → 1.0.0)
 - Other messages → **patch** version bump (0.1.0 → 0.1.1)
 
 **Option B: Manual Release Script**
+
 ```bash
 # Use the release script for manual control
 ./.github/create-release.sh v1.0.0
 ```
 
 **Option C: Manual Workflow Trigger**
+
 - Go to GitHub Actions → "CD - Continuous Deployment" → "Run workflow"
 - Choose version bump type (patch/minor/major)
 - Optionally create GitHub release
 
 **Option D: Traditional Git Tags**
+
 ```bash
 # Create and push a version tag manually
 git tag v1.0.0
@@ -91,8 +96,9 @@ git push origin v1.0.0
 ### Initial Submission
 
 1. **Submit package** to Packagist:
+
    - Go to [https://packagist.org/packages/submit](https://packagist.org/packages/submit)
-   - Enter repository URL: `https://github.com/tyrads/tyrads-php-sdk-iframe`
+   - Enter repository URL: `https://github.com/tyrads-com/tyrads-php-sdk-iframe`
    - Click "Check" and then "Submit"
 
 2. **Configure GitHub webhook**:
@@ -103,12 +109,14 @@ git push origin v1.0.0
 ### Package Requirements
 
 ✅ **Required files present**:
+
 - `composer.json` - Package metadata and dependencies
 - `README.md` - Installation and usage documentation
 - `LICENSE` - MIT license file
 - Source code in `src/` directory
 
 ✅ **composer.json metadata**:
+
 - Package name: `tyrads/tyrads-sdk`
 - Description with PHP version compatibility
 - Keywords for discoverability
@@ -124,6 +132,7 @@ The package follows [Semantic Versioning](https://semver.org/):
 - **PATCH** (0.0.X) - Bug fixes (backward compatible)
 
 ### Examples:
+
 - `v0.1.0` - Initial release
 - `v0.1.1` - Bug fix
 - `v0.2.0` - New feature
@@ -142,11 +151,13 @@ composer require tyrads/tyrads-sdk
 ### Common Issues
 
 1. **Package not updating on Packagist**
+
    - Check GitHub webhook is configured
    - Verify webhook deliveries in GitHub settings
    - Manually trigger update via Packagist dashboard
 
 2. **CI/CD workflow failing**
+
    - Check GitHub Actions logs
    - Ensure all tests pass locally
    - Validate composer.json structure
@@ -163,7 +174,7 @@ If automatic updates fail, manually trigger an update:
 ```bash
 curl -XPOST -H'Content-type: application/json' \
   'https://packagist.org/api/update-package?username=USERNAME&apiToken=API_TOKEN' \
-  -d'{"repository":{"url":"https://github.com/tyrads/tyrads-php-sdk-iframe"}}'
+  -d'{"repository":{"url":"https://github.com/tyrads-com/tyrads-php-sdk-iframe"}}'
 ```
 
 Replace `USERNAME` and `API_TOKEN` with your Packagist credentials.
