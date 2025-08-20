@@ -47,7 +47,7 @@ class ConfigurationTest extends TestCase
         $config = new Configuration('test_api_key', 'test_api_secret');
         $version = $config->getSdkVersion();
         
-        $this->assertIsString($version);
+        $this->assertTrue(is_string($version));
         // Version should be a non-empty string and not 'unknown'
         $this->assertNotEmpty($version);
         $this->assertNotEquals('unknown', $version);

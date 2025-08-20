@@ -30,8 +30,8 @@ class TyrAdsSdkTest extends TestCase
         
         $url = $sdk->iframeUrl($token);
         
-        $this->assertStringContainsString('https://sdk.tyrads.com', $url);
-        $this->assertStringContainsString('token=test_token_123', $url);
+        $this->assertNotFalse(strpos($url, 'https://sdk.tyrads.com'));
+        $this->assertNotFalse(strpos($url, 'token=test_token_123'));
     }
 
     public function testTyrAdsSdkCanGenerateIframeUrlWithAuthenticationSignObject()
@@ -41,8 +41,8 @@ class TyrAdsSdkTest extends TestCase
         
         $url = $sdk->iframeUrl($authSign);
         
-        $this->assertStringContainsString('https://sdk.tyrads.com', $url);
-        $this->assertStringContainsString('token=test_token_123', $url);
+        $this->assertNotFalse(strpos($url, 'https://sdk.tyrads.com'));
+        $this->assertNotFalse(strpos($url, 'token=test_token_123'));
     }
 
     public function testTyrAdsSdkCanGenerateIframeUrlWithDeeplinkParameter()
@@ -53,9 +53,9 @@ class TyrAdsSdkTest extends TestCase
         
         $url = $sdk->iframeUrl($token, $deeplinkTo);
         
-        $this->assertStringContainsString('https://sdk.tyrads.com', $url);
-        $this->assertStringContainsString('token=test_token_123', $url);
-        $this->assertStringContainsString('to=surveys', $url);
+        $this->assertNotFalse(strpos($url, 'https://sdk.tyrads.com'));
+        $this->assertNotFalse(strpos($url, 'token=test_token_123'));
+        $this->assertNotFalse(strpos($url, 'to=surveys'));
     }
 
     public function testTyrAdsSdkThrowsExceptionForInvalidIframeUrlParameter()
@@ -75,8 +75,8 @@ class TyrAdsSdkTest extends TestCase
         $url = $sdk->iframeUrl($token, $deeplinkTo);
         
         // PHP's urlencode() converts spaces to + instead of %20
-        $this->assertStringContainsString('token=test+token+with+spaces', $url);
-        $this->assertStringContainsString('to=path%2Fwith%2Fspecial+chars', $url);
+        $this->assertNotFalse(strpos($url, 'token=test+token+with+spaces'));
+        $this->assertNotFalse(strpos($url, 'to=path%2Fwith%2Fspecial+chars'));
     }
 
     public function testTyrAdsSdkAuthenticationRequestIsProperlyValidated()
