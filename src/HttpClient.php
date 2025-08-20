@@ -8,7 +8,6 @@ use Tyrads\TyradsSdk\Helper\GuzzleCompatibility;
 
 class HttpClient
 {
-
     /**
      * @var \Tyrads\TyradsSdk\Configuration
      */
