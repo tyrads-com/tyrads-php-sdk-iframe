@@ -1,91 +1,102 @@
 <?php
 
+use PHPUnit\Framework\TestCase;
 use Tyrads\TyradsSdk\TyrAdsSdk;
 use Tyrads\TyradsSdk\Configuration;
 use Tyrads\TyradsSdk\Contract\AuthenticationRequest;
 use Tyrads\TyradsSdk\Contract\AuthenticationSign;
 
-test('TyrAdsSdk can be instantiated using make method', function () {
-    $sdk = TyrAdsSdk::make('test_api_key', 'test_api_secret');
-    
-    expect($sdk)->toBeInstanceOf(TyrAdsSdk::class);
-});
+class TyrAdsSdkTest extends TestCase
+{
+    public function testTyrAdsSdkCanBeInstantiatedUsingMakeMethod()
+    {
+        $sdk = TyrAdsSdk::make('test_api_key', 'test_api_secret');
+        
+        $this->assertInstanceOf(TyrAdsSdk::class, $sdk);
+    }
 
-test('TyrAdsSdk can be instantiated with Configuration object', function () {
-    $config = new Configuration('test_api_key', 'test_api_secret');
-    $sdk = new TyrAdsSdk($config);
-    
-    expect($sdk)->toBeInstanceOf(TyrAdsSdk::class);
-});
+    public function testTyrAdsSdkCanBeInstantiatedWithConfigurationObject()
+    {
+        $config = new Configuration('test_api_key', 'test_api_secret');
+        $sdk = new TyrAdsSdk($config);
+        
+        $this->assertInstanceOf(TyrAdsSdk::class, $sdk);
+    }
 
-test('TyrAdsSdk can generate iframe URL with token string', function () {
-    $sdk = TyrAdsSdk::make('test_api_key', 'test_api_secret');
-    $token = 'test_token_123';
-    
-    $url = $sdk->iframeUrl($token);
-    
-    expect($url)->toContain('https://sdk.tyrads.com');
-    expect($url)->toContain('token=test_token_123');
-});
+    public function testTyrAdsSdkCanGenerateIframeUrlWithTokenString()
+    {
+        $sdk = TyrAdsSdk::make('test_api_key', 'test_api_secret');
+        $token = 'test_token_123';
+        
+        $url = $sdk->iframeUrl($token);
+        
+        $this->assertStringContainsString('https://sdk.tyrads.com', $url);
+        $this->assertStringContainsString('token=test_token_123', $url);
+    }
 
-test('TyrAdsSdk can generate iframe URL with AuthenticationSign object', function () {
-    $sdk = TyrAdsSdk::make('test_api_key', 'test_api_secret');
-    $authSign = new AuthenticationSign('test_token_123', 'user123', 25, 1);
-    
-    $url = $sdk->iframeUrl($authSign);
-    
-    expect($url)->toContain('https://sdk.tyrads.com');
-    expect($url)->toContain('token=test_token_123');
-});
+    public function testTyrAdsSdkCanGenerateIframeUrlWithAuthenticationSignObject()
+    {
+        $sdk = TyrAdsSdk::make('test_api_key', 'test_api_secret');
+        $authSign = new AuthenticationSign('test_token_123', 'user123', 25, 1);
+        
+        $url = $sdk->iframeUrl($authSign);
+        
+        $this->assertStringContainsString('https://sdk.tyrads.com', $url);
+        $this->assertStringContainsString('token=test_token_123', $url);
+    }
 
-test('TyrAdsSdk can generate iframe URL with deeplink parameter', function () {
-    $sdk = TyrAdsSdk::make('test_api_key', 'test_api_secret');
-    $token = 'test_token_123';
-    $deeplinkTo = 'surveys';
-    
-    $url = $sdk->iframeUrl($token, $deeplinkTo);
-    
-    expect($url)->toContain('https://sdk.tyrads.com');
-    expect($url)->toContain('token=test_token_123');
-    expect($url)->toContain('to=surveys');
-});
+    public function testTyrAdsSdkCanGenerateIframeUrlWithDeeplinkParameter()
+    {
+        $sdk = TyrAdsSdk::make('test_api_key', 'test_api_secret');
+        $token = 'test_token_123';
+        $deeplinkTo = 'surveys';
+        
+        $url = $sdk->iframeUrl($token, $deeplinkTo);
+        
+        $this->assertStringContainsString('https://sdk.tyrads.com', $url);
+        $this->assertStringContainsString('token=test_token_123', $url);
+        $this->assertStringContainsString('to=surveys', $url);
+    }
 
-test('TyrAdsSdk throws exception for invalid iframe URL parameter', function () {
-    $sdk = TyrAdsSdk::make('test_api_key', 'test_api_secret');
-    
-    expect(function () use ($sdk) {
+    public function testTyrAdsSdkThrowsExceptionForInvalidIframeUrlParameter()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        
+        $sdk = TyrAdsSdk::make('test_api_key', 'test_api_secret');
         $sdk->iframeUrl(123); // Invalid parameter type
-    })->toThrow(InvalidArgumentException::class);
-});
+    }
 
-test('TyrAdsSdk URL encodes parameters correctly', function () {
-    $sdk = TyrAdsSdk::make('test_api_key', 'test_api_secret');
-    $token = 'test token with spaces';
-    $deeplinkTo = 'path/with/special chars';
-    
-    $url = $sdk->iframeUrl($token, $deeplinkTo);
-    
-    // PHP's urlencode() converts spaces to + instead of %20
-    expect($url)->toContain('token=test+token+with+spaces');
-    expect($url)->toContain('to=path%2Fwith%2Fspecial+chars');
-});
+    public function testTyrAdsSdkUrlEncodesParametersCorrectly()
+    {
+        $sdk = TyrAdsSdk::make('test_api_key', 'test_api_secret');
+        $token = 'test token with spaces';
+        $deeplinkTo = 'path/with/special chars';
+        
+        $url = $sdk->iframeUrl($token, $deeplinkTo);
+        
+        // PHP's urlencode() converts spaces to + instead of %20
+        $this->assertStringContainsString('token=test+token+with+spaces', $url);
+        $this->assertStringContainsString('to=path%2Fwith%2Fspecial+chars', $url);
+    }
 
-test('TyrAdsSdk authentication request is properly validated', function () {
-    $authRequest = new AuthenticationRequest('user123', 25, 1);
-    
-    // Test that validation passes without throwing exception
-    $authRequest->validate(); // This should not throw
-    
-    $data = $authRequest->getParsedData();
-    expect($data)->toHaveKey('publisherUserId');
-    expect($data)->toHaveKey('age');
-    expect($data)->toHaveKey('gender');
-});
+    public function testTyrAdsSdkAuthenticationRequestIsProperlyValidated()
+    {
+        $authRequest = new AuthenticationRequest('user123', 25, 1);
+        
+        // Test that validation passes without throwing exception
+        $authRequest->validate(); // This should not throw
+        
+        $data = $authRequest->getParsedData();
+        $this->assertArrayHasKey('publisherUserId', $data);
+        $this->assertArrayHasKey('age', $data);
+        $this->assertArrayHasKey('gender', $data);
+    }
 
-test('TyrAdsSdk invalid authentication request throws validation error', function () {
-    $invalidRequest = new AuthenticationRequest('', 25, 1); // Empty user ID
-    
-    expect(function () use ($invalidRequest) {
+    public function testTyrAdsSdkInvalidAuthenticationRequestThrowsValidationError()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        
+        $invalidRequest = new AuthenticationRequest('', 25, 1); // Empty user ID
         $invalidRequest->validate();
-    })->toThrow(InvalidArgumentException::class);
-});
+    }
+}

@@ -1,0 +1,277 @@
+name: CD - Continuous Deployment
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      create_release:
+        description: 'Create GitHub release'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  auto-version:
+    runs-on: ubuntu-latest
+    name: Auto Version and Tag
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      new_tag: ${{ steps.version.outputs.new_tag }}
+      should_release: ${{ steps.version.outputs.should_release }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+    
+    - name: Get latest tag
+      id: get_tag
+      run: |
+        # Get the latest tag, default to v0.0.0 if none exists
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+        echo "Latest tag: $LATEST_TAG"
+    
+    - name: Determine version bump
+      id: version
+      run: |
+        LATEST_TAG="${{ steps.get_tag.outputs.latest_tag }}"
+        
+        # Parse semantic version
+        if [[ $LATEST_TAG =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+          MAJOR=${BASH_REMATCH[1]}
+          MINOR=${BASH_REMATCH[2]}
+          PATCH=${BASH_REMATCH[3]}
+        else
+          MAJOR=0
+          MINOR=0
+          PATCH=0
+        fi
+        
+        # Check commit messages for version bump indicators
+        COMMITS=$(git log $LATEST_TAG..HEAD --oneline --no-merges 2>/dev/null || git log --oneline --no-merges -10)
+        
+        # Determine bump type based on commit messages or manual input
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          BUMP_TYPE="${{ github.event.inputs.version_bump }}"
+        elif echo "$COMMITS" | grep -qi "BREAKING\|major:"; then
+          BUMP_TYPE="major"
+        elif echo "$COMMITS" | grep -qi "feat\|feature\|minor:"; then
+          BUMP_TYPE="minor"
+        else
+          BUMP_TYPE="patch"
+        fi
+        
+        # Calculate new version
+        case $BUMP_TYPE in
+          major)
+            NEW_MAJOR=$((MAJOR + 1))
+            NEW_MINOR=0
+            NEW_PATCH=0
+            ;;
+          minor)
+            NEW_MAJOR=$MAJOR
+            NEW_MINOR=$((MINOR + 1))
+            NEW_PATCH=0
+            ;;
+          patch)
+            NEW_MAJOR=$MAJOR
+            NEW_MINOR=$MINOR
+            NEW_PATCH=$((PATCH + 1))
+            ;;
+        esac
+        
+        NEW_TAG="v${NEW_MAJOR}.${NEW_MINOR}.${NEW_PATCH}"
+        
+        echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+        echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+        echo "should_release=true" >> $GITHUB_OUTPUT
+        
+        echo "Bump type: $BUMP_TYPE"
+        echo "Old version: $LATEST_TAG"
+        echo "New version: $NEW_TAG"
+    
+    - name: Create and push tag
+      if: steps.version.outputs.should_release == 'true'
+      run: |
+        NEW_TAG="${{ steps.version.outputs.new_tag }}"
+        BUMP_TYPE="${{ steps.version.outputs.bump_type }}"
+        
+        # Create annotated tag with release notes
+        git tag -a "$NEW_TAG" -m "Release $NEW_TAG - $BUMP_TYPE version bump"
+        git push origin "$NEW_TAG"
+        
+        echo "Created and pushed tag: $NEW_TAG"
+
+  publish:
+    runs-on: ubuntu-latest
+    name: Publish to Packagist
+    needs: [auto-version]
+    if: always() && (needs.auto-version.outputs.should_release == 'true' || github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v'))
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.2
+        extensions: mbstring, xml, ctype, json, curl
+    
+    - name: Cache Composer packages
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-8.2-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-8.2-
+    
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-dev --optimize-autoloader
+    
+    - name: Run tests before publishing
+      run: |
+        composer install --prefer-dist --no-progress
+        composer test
+    
+    - name: Validate package structure
+      run: |
+        composer validate --strict
+        php .github/test-compatibility.php
+    
+    - name: Update Packagist webhook
+      if: success()
+      run: |
+        echo "Triggering Packagist update..."
+        # Packagist will automatically detect and update the package when:
+        # 1. A GitHub webhook is configured on the repository
+        # 2. Changes are pushed to tracked branches (main)
+        # 3. New releases/tags are created
+        
+        # If you want to manually trigger an update via API:
+        # curl -XPOST -H'Content-type: application/json' 'https://packagist.org/api/update-package?username=USERNAME&apiToken=API_TOKEN' -d'{"repository":{"url":"REPO_URL"}}'
+        
+        echo "Package should be automatically updated on Packagist via webhook"
+        echo "Repository: https://github.com/${{ github.repository }}"
+        echo "Commit: ${{ github.sha }}"
+        echo "Branch: ${{ github.ref_name }}"
+
+  create-release:
+    runs-on: ubuntu-latest
+    name: Create GitHub Release
+    needs: [auto-version, publish]
+    if: always() && (startsWith(github.ref, 'refs/tags/v') || (needs.auto-version.outputs.should_release == 'true' && github.event.inputs.create_release != 'false'))
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Get version from tag or auto-version
+      id: version
+      run: |
+        if [ "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" ]; then
+          VERSION=${GITHUB_REF#refs/tags/}
+        else
+          VERSION="${{ needs.auto-version.outputs.new_tag }}"
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Using version: $VERSION"
+    
+    - name: Generate changelog for version
+      id: changelog
+      run: |
+        VERSION=${{ steps.version.outputs.VERSION }}
+        echo "Creating release for version: $VERSION"
+        
+        # Get the previous tag for changelog generation
+        PREV_TAG=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
+        
+        # Generate changelog from commits
+        echo "## TyrAds PHP SDK $VERSION" > release_notes.md
+        echo "" >> release_notes.md
+        
+        if [ -n "$PREV_TAG" ]; then
+          echo "### Changes since $PREV_TAG" >> release_notes.md
+          echo "" >> release_notes.md
+          
+          # Get commits between tags and format them
+          git log $PREV_TAG..HEAD --oneline --no-merges --pretty=format:"- %s (%h)" >> release_notes.md
+          echo "" >> release_notes.md
+        else
+          echo "### Changes" >> release_notes.md
+          echo "- Initial release" >> release_notes.md
+        fi
+        
+        echo "" >> release_notes.md
+        echo "### Installation" >> release_notes.md
+        echo "\`\`\`bash" >> release_notes.md
+        echo "composer require tyrads/tyrads-sdk:$VERSION" >> release_notes.md
+        echo "\`\`\`" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "### Compatibility" >> release_notes.md
+        echo "- PHP 5.5+ through PHP 8.3" >> release_notes.md
+        echo "- Guzzle HTTP client support (versions 5.0, 6.0, 7.0)" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "### Documentation" >> release_notes.md
+        echo "See [README.md](README.md) for usage instructions and API documentation." >> release_notes.md
+        
+        echo "Generated changelog:"
+        cat release_notes.md
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        release_name: TyrAds PHP SDK ${{ steps.version.outputs.VERSION }}
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
+
+  notify:
+    runs-on: ubuntu-latest
+    name: Notify deployment status
+    needs: [auto-version, publish]
+    if: always()
+    
+    steps:
+    - name: Deployment Success
+      if: needs.publish.result == 'success'
+      run: |
+        NEW_TAG="${{ needs.auto-version.outputs.new_tag }}"
+        echo "✅ Package successfully validated and ready for Packagist"
+        echo "📦 Package: tyrads/tyrads-sdk"
+        echo "🏷️ Version: ${NEW_TAG:-'latest'}"
+        echo "🔗 Packagist: https://packagist.org/packages/tyrads/tyrads-sdk"
+        echo "📋 To install: composer require tyrads/tyrads-sdk"
+        if [ -n "$NEW_TAG" ]; then
+          echo "📋 To install specific version: composer require tyrads/tyrads-sdk:$NEW_TAG"
+        fi
+    
+    - name: Deployment Failed
+      if: needs.publish.result == 'failure'
+      run: |
+        echo "❌ Package deployment failed"
+        echo "Please check the workflow logs for details"
+        exit 1

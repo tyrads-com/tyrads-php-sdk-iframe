@@ -107,11 +107,25 @@ class Configuration
      */
     public function getSdkVersion(): string
     {
+        // Try to get version from composer.json if it exists (for development)
         if (file_exists(__DIR__ . '/../composer.json')) {
             $composer = json_decode(file_get_contents(__DIR__ . '/../composer.json'), true);
-            return $composer['version'] ?? 'unknown';
+            if (isset($composer['version'])) {
+                return $composer['version'];
+            }
         }
-        return 'unknown';
+        
+        // For Packagist installations, try to get version from Composer runtime
+        if (class_exists('\Composer\InstalledVersions')) {
+            try {
+                return \Composer\InstalledVersions::getVersion('tyrads/tyrads-sdk') ?: 'dev-main';
+            } catch (\Exception $e) {
+                // Ignore and fall through to default
+            }
+        }
+        
+        // Fallback for development or when version cannot be determined
+        return 'dev-main';
     }
 
     /**
