@@ -521,6 +521,3 @@ coverage.clover
 ##### Cache Files
 *.cache
 .cache/
-
-##### Misc
-CLAUDE.md
