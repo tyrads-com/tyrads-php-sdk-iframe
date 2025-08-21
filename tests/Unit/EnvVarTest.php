@@ -24,8 +24,8 @@ class EnvVarTest extends TestCase
 
     public function testEnvVarConstantsAreStrings()
     {
-        $this->assertIsString(EnvVar::TYRADS_API_KEY);
-        $this->assertIsString(EnvVar::TYRADS_API_SECRET);
+        $this->assertTrue(is_string(EnvVar::TYRADS_API_KEY));
+        $this->assertTrue(is_string(EnvVar::TYRADS_API_SECRET));
     }
 
     public function testEnvVarConstantsAreNotEmpty()

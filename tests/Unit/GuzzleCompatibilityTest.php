@@ -9,7 +9,7 @@ class GuzzleCompatibilityTest extends TestCase
     {
         $result = GuzzleCompatibility::isUsingGuzzle5();
 
-        $this->assertIsBool($result);
+        $this->assertTrue(is_bool($result));
     }
 
     public function testGuzzleCompatibilityCanDetectGuzzleVersion()

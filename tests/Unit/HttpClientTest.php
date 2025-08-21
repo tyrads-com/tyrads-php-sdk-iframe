@@ -9,36 +9,34 @@ use GuzzleHttp\Psr7\Response;
 
 class HttpClientTest extends TestCase
 {
-    private $mockConfig;
-    private $mockGuzzle;
-
-    protected function setUp(): void
+    private function createMockConfig()
     {
-        parent::setUp();
-
-        $this->mockConfig = $this->createMock(Configuration::class);
-        $this->mockConfig->method('getParsedApiUrl')->willReturn('https://api.tyrads.com/v3.0');
-        $this->mockConfig->method('getApiKey')->willReturn('test_api_key');
-        $this->mockConfig->method('getApiSecret')->willReturn('test_api_secret');
-        $this->mockConfig->method('getSdkPlatform')->willReturn('Web');
-        $this->mockConfig->method('getSdkVersion')->willReturn('1.0.0');
-        $this->mockConfig->method('getLanguage')->willReturn('en');
-
-        $this->mockGuzzle = $this->createMock(ClientInterface::class);
+        $mockConfig = $this->createMock(Configuration::class);
+        $mockConfig->method('getParsedApiUrl')->willReturn('https://api.tyrads.com/v3.0');
+        $mockConfig->method('getApiKey')->willReturn('test_api_key');
+        $mockConfig->method('getApiSecret')->willReturn('test_api_secret');
+        $mockConfig->method('getSdkPlatform')->willReturn('Web');
+        $mockConfig->method('getSdkVersion')->willReturn('1.0.0');
+        $mockConfig->method('getLanguage')->willReturn('en');
+        return $mockConfig;
     }
 
     public function testHttpClientCanBeInstantiated()
     {
-        $httpClient = new HttpClient($this->mockConfig, $this->mockGuzzle);
+        $mockConfig = $this->createMockConfig();
+        $mockGuzzle = $this->createMock(ClientInterface::class);
+        $httpClient = new HttpClient($mockConfig, $mockGuzzle);
 
         $this->assertInstanceOf(HttpClient::class, $httpClient);
     }
 
     public function testHttpClientPostJsonSendsRequestSuccessfully()
     {
+        $mockConfig = $this->createMockConfig();
+        $mockGuzzle = $this->createMock(ClientInterface::class);
         $mockResponse = new Response(200, [], '{"success": true, "token": "test_token"}');
 
-        $this->mockGuzzle->expects($this->once())
+        $mockGuzzle->expects($this->once())
             ->method('request')
             ->with(
                 'POST',
@@ -54,10 +52,10 @@ class HttpClientTest extends TestCase
             )
             ->willReturn($mockResponse);
 
-        $httpClient = new HttpClient($this->mockConfig, $this->mockGuzzle);
+        $httpClient = new HttpClient($mockConfig, $mockGuzzle);
         $result = $httpClient->postJson('/auth', array('test' => 'data'));
 
-        $this->assertIsArray($result);
+        $this->assertTrue(is_array($result));
         $this->assertArrayHasKey('rawBody', $result);
         $this->assertArrayHasKey('header', $result);
         $this->assertArrayHasKey('json', $result);
@@ -68,46 +66,52 @@ class HttpClientTest extends TestCase
 
     public function testHttpClientThrowsExceptionOnClientError()
     {
+        $mockConfig = $this->createMockConfig();
+        $mockGuzzle = $this->createMock(ClientInterface::class);
         $this->expectException(RuntimeException::class);
         $this->expectExceptionCode(400);
 
         $mockResponse = new Response(400, [], '{"message": "Bad Request"}');
 
-        $this->mockGuzzle->expects($this->once())
+        $mockGuzzle->expects($this->once())
             ->method('request')
             ->willReturn($mockResponse);
 
-        $httpClient = new HttpClient($this->mockConfig, $this->mockGuzzle);
+        $httpClient = new HttpClient($mockConfig, $mockGuzzle);
         $httpClient->postJson('/auth', array('test' => 'data'));
     }
 
     public function testHttpClientThrowsExceptionOnServerError()
     {
+        $mockConfig = $this->createMockConfig();
+        $mockGuzzle = $this->createMock(ClientInterface::class);
         $this->expectException(RuntimeException::class);
         $this->expectExceptionCode(500);
 
         $mockResponse = new Response(500, [], '{"message": "Internal Server Error"}');
 
-        $this->mockGuzzle->expects($this->once())
+        $mockGuzzle->expects($this->once())
             ->method('request')
             ->willReturn($mockResponse);
 
-        $httpClient = new HttpClient($this->mockConfig, $this->mockGuzzle);
+        $httpClient = new HttpClient($mockConfig, $mockGuzzle);
         $httpClient->postJson('/auth', array('test' => 'data'));
     }
 
     public function testHttpClientHandlesEmptyErrorMessage()
     {
+        $mockConfig = $this->createMockConfig();
+        $mockGuzzle = $this->createMock(ClientInterface::class);
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Unknown error');
 
         $mockResponse = new Response(400, [], '{}');
 
-        $this->mockGuzzle->expects($this->once())
+        $mockGuzzle->expects($this->once())
             ->method('request')
             ->willReturn($mockResponse);
 
-        $httpClient = new HttpClient($this->mockConfig, $this->mockGuzzle);
+        $httpClient = new HttpClient($mockConfig, $mockGuzzle);
         $httpClient->postJson('/auth', array('test' => 'data'));
     }
 
@@ -122,9 +126,10 @@ class HttpClientTest extends TestCase
         $mockConfig->method('getSdkVersion')->willReturn('1.0.0');
         $mockConfig->method('getLanguage')->willReturn(null);
 
+        $mockGuzzle = $this->createMock(ClientInterface::class);
         $mockResponse = new Response(200, [], '{"success": true}');
 
-        $this->mockGuzzle->expects($this->once())
+        $mockGuzzle->expects($this->once())
             ->method('request')
             ->with(
                 'POST',
@@ -136,7 +141,7 @@ class HttpClientTest extends TestCase
             )
             ->willReturn($mockResponse);
 
-        $httpClient = new HttpClient($mockConfig, $this->mockGuzzle);
+        $httpClient = new HttpClient($mockConfig, $mockGuzzle);
         $httpClient->postJson('/auth', array());
     }
 
@@ -151,9 +156,10 @@ class HttpClientTest extends TestCase
         $mockConfig->method('getSdkVersion')->willReturn('1.0.0');
         $mockConfig->method('getLanguage')->willReturn('');
 
+        $mockGuzzle = $this->createMock(ClientInterface::class);
         $mockResponse = new Response(200, [], '{"success": true}');
 
-        $this->mockGuzzle->expects($this->once())
+        $mockGuzzle->expects($this->once())
             ->method('request')
             ->with(
                 'POST',
@@ -165,7 +171,7 @@ class HttpClientTest extends TestCase
             )
             ->willReturn($mockResponse);
 
-        $httpClient = new HttpClient($mockConfig, $this->mockGuzzle);
+        $httpClient = new HttpClient($mockConfig, $mockGuzzle);
         $httpClient->postJson('/auth', array());
     }
 }
