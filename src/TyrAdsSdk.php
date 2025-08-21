@@ -92,4 +92,30 @@ class TyrAdsSdk
 
         return $url;
     }
+
+    /**
+     * Generate the URL for the TyrAds Premium Widget.
+     *
+     * @param \Tyrads\TyradsSdk\Contract\AuthenticationSign|string $authSignOrToken
+     * @param string|null $name
+     * @return string
+     */
+    public function iframePremiumWidget($authSignOrToken, $name = null)
+    {
+        // Check if the input is an instance of AuthenticationSign or a string token
+        if ($authSignOrToken instanceof Contract\AuthenticationSign) {
+            $token = $authSignOrToken->getToken();
+        } elseif (is_string($authSignOrToken)) {
+            $token = $authSignOrToken;
+        } else {
+            throw new \InvalidArgumentException('Invalid argument: must be an instance of AuthenticationSign or a string token.');
+        }
+
+        $url = $this->config->getSdkIframeBaseUrl() . '/widget?token=' . urlencode($token);
+        if ($name !== null) {
+            $url .= '&name=' . urlencode($name);
+        }
+
+        return $url;
+    }
 }
