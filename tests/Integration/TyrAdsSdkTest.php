@@ -81,7 +81,7 @@ class TyrAdsSdkTest extends TestCase
 
     public function testTyrAdsSdkAuthenticationRequestIsProperlyValidated()
     {
-        $authRequest = new AuthenticationRequest('user123', 25, 1);
+        $authRequest = new AuthenticationRequest('user123', array('age' => 25, 'gender' => 1));
 
         // Test that validation passes without throwing exception
         $authRequest->validate(); // This should not throw
@@ -96,7 +96,7 @@ class TyrAdsSdkTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $invalidRequest = new AuthenticationRequest('', 25, 1); // Empty user ID
+        $invalidRequest = new AuthenticationRequest(''); // Empty user ID
         $invalidRequest->validate();
     }
 

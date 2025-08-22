@@ -146,24 +146,20 @@ class AuthenticationRequest
 
     /**
      * Constructor to initialize properties.
-     * Only $publisherUserId, $age, $gender are required.
+     * Only $publisherUserId is required.
      * The rest are optional and can be set later.
      *
      * @param string $publisherUserId
-     * @param int $age
-     * @param int $gender
      * @param array $optionalParams (optional)
      */
-    public function __construct($publisherUserId, $age, $gender)
+    public function __construct($publisherUserId)
     {
-        $this->age = $age;
-        $this->gender = $gender;
         $this->publisherUserId = $publisherUserId;
 
-        // For PHP 5 compatibility, no variadics. Accept optional array as 4th param.
+        // For PHP 5 compatibility, no variadics. Accept optional array as 2nd param.
         $args = func_get_args();
-        if (isset($args[3]) && is_array($args[3])) {
-            $this->setOptionalParams($args[3]);
+        if (isset($args[1]) && is_array($args[1])) {
+            $this->setOptionalParams($args[1]);
         }
     }
 
@@ -180,12 +176,12 @@ class AuthenticationRequest
         }
 
         // Validate age
-        if (!is_int($this->age) || $this->age < 0) {
+        if ($this->age != null && (!is_int($this->age) || $this->age < 0)) {
             throw new \InvalidArgumentException('Age must be a non-negative integer.');
         }
 
         // Validate gender
-        if ($this->gender !== 1 && $this->gender !== 2) {
+        if ($this->gender != null && $this->gender !== 1 && $this->gender !== 2) {
             throw new \InvalidArgumentException('Gender must be either 1 (male) or 2 (female).');
         }
 
@@ -241,6 +237,12 @@ class AuthenticationRequest
     {
         foreach ($params as $key => $value) {
             switch ($key) {
+                case 'age':
+                    $this->age = $value;
+                    break;
+                case 'gender':
+                    $this->gender = $value;
+                    break;
                 case 'email':
                     $this->email = $value;
                     break;
@@ -304,12 +306,12 @@ class AuthenticationRequest
     public function getParsedData()
     {
         $data = array(
-            'age' => $this->age,
-            'gender' => $this->gender,
             'publisherUserId' => $this->publisherUserId,
         );
 
         $optionalFields = array(
+            'age' => $this->age,
+            'gender' => $this->gender,
             'email' => $this->email,
             'phoneNumber' => $this->phoneNumber,
             'sub1' => $this->sub1,
