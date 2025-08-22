@@ -146,18 +146,14 @@ class AuthenticationRequest
 
     /**
      * Constructor to initialize properties.
-     * Only $publisherUserId, $age, $gender are required.
+     * Only $publisherUserId is required.
      * The rest are optional and can be set later.
      *
      * @param string $publisherUserId
-     * @param int $age
-     * @param int $gender
      * @param array $optionalParams (optional)
      */
-    public function __construct($publisherUserId, $age, $gender)
+    public function __construct($publisherUserId)
     {
-        $this->age = $age;
-        $this->gender = $gender;
         $this->publisherUserId = $publisherUserId;
 
         // For PHP 5 compatibility, no variadics. Accept optional array as 4th param.
@@ -180,12 +176,12 @@ class AuthenticationRequest
         }
 
         // Validate age
-        if (!is_int($this->age) || $this->age < 0) {
+        if ($this->age != null && (!is_int($this->age) || $this->age < 0)) {
             throw new \InvalidArgumentException('Age must be a non-negative integer.');
         }
 
         // Validate gender
-        if ($this->gender !== 1 && $this->gender !== 2) {
+        if ($this->gender != null && $this->gender !== 1 && $this->gender !== 2) {
             throw new \InvalidArgumentException('Gender must be either 1 (male) or 2 (female).');
         }
 
@@ -304,12 +300,12 @@ class AuthenticationRequest
     public function getParsedData()
     {
         $data = array(
-            'age' => $this->age,
-            'gender' => $this->gender,
             'publisherUserId' => $this->publisherUserId,
         );
 
         $optionalFields = array(
+            'age' => $this->age,
+            'gender' => $this->gender,
             'email' => $this->email,
             'phoneNumber' => $this->phoneNumber,
             'sub1' => $this->sub1,

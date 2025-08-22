@@ -18,27 +18,10 @@ class AuthenticationSign
      */
     protected $publisherUserId;
 
-    /**
-     * The age of the user.
-     *
-     * @var int
-     */
-    protected $age;
-
-    /**
-     * The gender of the user.
-     * 1 = male, 2 = female
-     *
-     * @var int
-     */
-    protected $gender;
-
-    public function __construct($token, $publisherUserId, $age, $gender)
+    public function __construct($token, $publisherUserId)
     {
         $this->token = $token;
         $this->publisherUserId = $publisherUserId;
-        $this->age = $age;
-        $this->gender = $gender;
     }
 
     public function getToken()
@@ -49,15 +32,5 @@ class AuthenticationSign
     public function getPublisherUserId()
     {
         return $this->publisherUserId;
-    }
-
-    public function getAge()
-    {
-        return $this->age;
-    }
-
-    public function getGender()
-    {
-        return $this->gender;
     }
 }
