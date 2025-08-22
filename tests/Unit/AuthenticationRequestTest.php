@@ -7,26 +7,30 @@ class AuthenticationRequestTest extends TestCase
 {
     public function testAuthenticationRequestCanBeInstantiatedWithRequiredParameters()
     {
-        $request = new AuthenticationRequest('user123', 25, 1);
+        $request = new AuthenticationRequest('user123');
 
         $data = $request->getParsedData();
         $this->assertEquals('user123', $data['publisherUserId']);
-        $this->assertEquals(25, $data['age']);
-        $this->assertEquals(1, $data['gender']);
+        $this->assertArrayNotHasKey('age', $data);
+        $this->assertArrayNotHasKey('gender', $data);
     }
 
     public function testAuthenticationRequestCanBeInstantiatedWithOptionalParameters()
     {
         $optionalParams = array(
+            'age' => 25,
+            'gender' => 1,
             'email' => 'test@example.com',
             'phoneNumber' => '+1234567890',
             'sub1' => 'sub1_value',
             'userGroup' => 'vip'
         );
 
-        $request = new AuthenticationRequest('user123', 25, 1, $optionalParams);
+        $request = new AuthenticationRequest('user123', $optionalParams);
 
         $data = $request->getParsedData();
+        $this->assertEquals(25, $data['age']);
+        $this->assertEquals(1, $data['gender']);
         $this->assertEquals('test@example.com', $data['email']);
         $this->assertEquals('+1234567890', $data['phoneNumber']);
         $this->assertEquals('sub1_value', $data['sub1']);
@@ -35,7 +39,7 @@ class AuthenticationRequestTest extends TestCase
 
     public function testAuthenticationRequestValidatesRequiredParametersCorrectly()
     {
-        $request = new AuthenticationRequest('user123', 25, 1);
+        $request = new AuthenticationRequest('user123');
 
         // Test that validation passes without throwing exception
         $request->validate(); // This should not throw
@@ -47,7 +51,7 @@ class AuthenticationRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $request = new AuthenticationRequest('', 25, 1);
+        $request = new AuthenticationRequest('');
         $request->validate();
     }
 
@@ -55,7 +59,8 @@ class AuthenticationRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $request = new AuthenticationRequest('user123', -1, 1);
+        $optionalParams = array('age' => -1);
+        $request = new AuthenticationRequest('user123', $optionalParams);
         $request->validate();
     }
 
@@ -63,7 +68,8 @@ class AuthenticationRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $request = new AuthenticationRequest('user123', 25, 3);
+        $optionalParams = array('gender' => 3);
+        $request = new AuthenticationRequest('user123', $optionalParams);
         $request->validate();
     }
 
@@ -71,7 +77,7 @@ class AuthenticationRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $request = new AuthenticationRequest('user123', 25, 1, array('email' => 'invalid-email'));
+        $request = new AuthenticationRequest('user123', array('email' => 'invalid-email'));
         $request->validate();
     }
 
@@ -79,13 +85,13 @@ class AuthenticationRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $request = new AuthenticationRequest('user123', 25, 1, array('phoneNumber' => 'invalid'));
+        $request = new AuthenticationRequest('user123', array('phoneNumber' => 'invalid'));
         $request->validate();
     }
 
     public function testAuthenticationRequestAcceptsValidEmailFormat()
     {
-        $request = new AuthenticationRequest('user123', 25, 1, array('email' => 'test@example.com'));
+        $request = new AuthenticationRequest('user123', array('email' => 'test@example.com'));
 
         // Test that validation passes without throwing exception
         $request->validate(); // This should not throw
@@ -95,7 +101,7 @@ class AuthenticationRequestTest extends TestCase
 
     public function testAuthenticationRequestAcceptsValidPhoneNumberFormat()
     {
-        $request = new AuthenticationRequest('user123', 25, 1, array('phoneNumber' => '+1-234-567-8900'));
+        $request = new AuthenticationRequest('user123', array('phoneNumber' => '+1-234-567-8900'));
 
         // Test that validation passes without throwing exception
         $request->validate(); // This should not throw
@@ -105,17 +111,20 @@ class AuthenticationRequestTest extends TestCase
 
     public function testAuthenticationRequestExcludesEmptyOptionalFieldsFromParsedData()
     {
-        $request = new AuthenticationRequest('user123', 25, 1, array('email' => '', 'sub1' => 'value'));
+        $request = new AuthenticationRequest('user123', array('age' => 25, 'gender' => 1, 'email' => '', 'sub1' => 'value'));
 
         $data = $request->getParsedData();
         $this->assertArrayNotHasKey('email', $data);
+        $this->assertArrayHasKey('age', $data);
+        $this->assertArrayHasKey('gender', $data);
         $this->assertArrayHasKey('sub1', $data);
         $this->assertEquals('value', $data['sub1']);
     }
 
     public function testAuthenticationRequestHandlesMinimumValidAge()
     {
-        $request = new AuthenticationRequest('user123', 1, 1);
+        $optionalParams = array('age' => 1);
+        $request = new AuthenticationRequest('user123', $optionalParams);
 
         // Test that validation passes without throwing exception
         $request->validate();
@@ -126,7 +135,8 @@ class AuthenticationRequestTest extends TestCase
 
     public function testAuthenticationRequestHandlesMaximumValidAge()
     {
-        $request = new AuthenticationRequest('user123', 120, 1);
+        $optionalParams = array('age' => 120);
+        $request = new AuthenticationRequest('user123', $optionalParams);
 
         // Test that validation passes without throwing exception  
         $request->validate();
@@ -138,6 +148,8 @@ class AuthenticationRequestTest extends TestCase
     public function testAuthenticationRequestHandlesAllOptionalParameters()
     {
         $optionalParams = array(
+            'age' => 25,
+            'gender' => 1,
             'email' => 'test@example.com',
             'phoneNumber' => '+1234567890',
             'sub1' => 'sub1_value',
@@ -148,7 +160,7 @@ class AuthenticationRequestTest extends TestCase
             'userGroup' => 'vip'
         );
 
-        $request = new AuthenticationRequest('user123', 25, 1, $optionalParams);
+        $request = new AuthenticationRequest('user123', $optionalParams);
 
         $data = $request->getParsedData();
         foreach ($optionalParams as $key => $value) {
@@ -161,13 +173,14 @@ class AuthenticationRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $request = new AuthenticationRequest(null, 25, 1);
+        $request = new AuthenticationRequest(null);
         $request->validate();
     }
 
     public function testAuthenticationRequestAcceptsZeroAge()
     {
-        $request = new AuthenticationRequest('user123', 0, 1);
+        $optionalParams = array('age' => 0);
+        $request = new AuthenticationRequest('user123', $optionalParams);
 
         // Test that validation passes - age 0 is valid (>= 0)
         $request->validate();
@@ -178,7 +191,7 @@ class AuthenticationRequestTest extends TestCase
 
     public function testAuthenticationRequestAcceptsValidEmailWithPlusSign()
     {
-        $request = new AuthenticationRequest('user123', 25, 1, array('email' => 'test+tag@example.com'));
+        $request = new AuthenticationRequest('user123', array('email' => 'test+tag@example.com'));
 
         // Test that validation passes without throwing exception
         $request->validate();
@@ -188,7 +201,7 @@ class AuthenticationRequestTest extends TestCase
 
     public function testAuthenticationRequestAcceptsInternationalPhoneNumber()
     {
-        $request = new AuthenticationRequest('user123', 25, 1, array('phoneNumber' => '+44-20-7946-0958'));
+        $request = new AuthenticationRequest('user123', array('phoneNumber' => '+44-20-7946-0958'));
 
         // Test that validation passes without throwing exception
         $request->validate();
@@ -198,7 +211,7 @@ class AuthenticationRequestTest extends TestCase
 
     public function testAuthenticationRequestHandlesWhitespaceInOptionalFields()
     {
-        $request = new AuthenticationRequest('user123', 25, 1, array(
+        $request = new AuthenticationRequest('user123', array(
             'email' => ' test@example.com ',
             'sub1' => '  value  '
         ));
@@ -206,5 +219,46 @@ class AuthenticationRequestTest extends TestCase
         $data = $request->getParsedData();
         $this->assertEquals(' test@example.com ', $data['email']);
         $this->assertEquals('  value  ', $data['sub1']);
+    }
+
+    public function testAuthenticationRequestAcceptsNullAgeAndGender()
+    {
+        $request = new AuthenticationRequest('user123');
+
+        // Test that validation passes with null age and gender
+        $request->validate();
+
+        $data = $request->getParsedData();
+        $this->assertArrayNotHasKey('age', $data);
+        $this->assertArrayNotHasKey('gender', $data);
+        $this->assertEquals('user123', $data['publisherUserId']);
+    }
+
+    public function testAuthenticationRequestAcceptsNullAgeWithValidGender()
+    {
+        $optionalParams = array('gender' => 1);
+        $request = new AuthenticationRequest('user123', $optionalParams);
+
+        // Test that validation passes
+        $request->validate();
+
+        $data = $request->getParsedData();
+        $this->assertArrayNotHasKey('age', $data);
+        $this->assertArrayHasKey('gender', $data);
+        $this->assertEquals(1, $data['gender']);
+    }
+
+    public function testAuthenticationRequestAcceptsNullGenderWithValidAge()
+    {
+        $optionalParams = array('age' => 25);
+        $request = new AuthenticationRequest('user123', $optionalParams);
+
+        // Test that validation passes
+        $request->validate();
+
+        $data = $request->getParsedData();
+        $this->assertArrayHasKey('age', $data);
+        $this->assertArrayNotHasKey('gender', $data);
+        $this->assertEquals(25, $data['age']);
     }
 }

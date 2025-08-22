@@ -58,9 +58,7 @@ class TyrAdsSdk
         if (isset($response['json']['data']['token'])) {
             return new Contract\AuthenticationSign(
                 $response['json']['data']['token'],
-                $data['publisherUserId'],
-                $data['age'],
-                $data['gender']
+                $data['publisherUserId']
             );
         }
 

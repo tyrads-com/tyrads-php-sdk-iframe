@@ -156,10 +156,10 @@ class AuthenticationRequest
     {
         $this->publisherUserId = $publisherUserId;
 
-        // For PHP 5 compatibility, no variadics. Accept optional array as 4th param.
+        // For PHP 5 compatibility, no variadics. Accept optional array as 2nd param.
         $args = func_get_args();
-        if (isset($args[3]) && is_array($args[3])) {
-            $this->setOptionalParams($args[3]);
+        if (isset($args[1]) && is_array($args[1])) {
+            $this->setOptionalParams($args[1]);
         }
     }
 
@@ -237,6 +237,12 @@ class AuthenticationRequest
     {
         foreach ($params as $key => $value) {
             switch ($key) {
+                case 'age':
+                    $this->age = $value;
+                    break;
+                case 'gender':
+                    $this->gender = $value;
+                    break;
                 case 'email':
                     $this->email = $value;
                     break;
