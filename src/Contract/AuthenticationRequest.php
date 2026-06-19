@@ -77,6 +77,9 @@ class AuthenticationRequest
     /**
      * The user group associated with the authentication request.
      *
+     * Accepts a string or an associative array as input. Arrays are JSON-encoded
+     * internally so the value sent on the wire is always a string.
+     *
      * @var string
      */
     protected $userGroup;
@@ -206,7 +209,6 @@ class AuthenticationRequest
             'sub3',
             'sub4',
             'sub5',
-            'userGroup',
             'mediaSourceName',
             'mediaSourceId',
             'mediaSubSourceId',
@@ -220,6 +222,13 @@ class AuthenticationRequest
             if (isset($this->$field) && $this->$field !== '' && !is_string($this->$field)) {
                 throw new \InvalidArgumentException($field . ' must be a string.');
             }
+        }
+
+        // Validate userGroup if present. Arrays are converted to JSON strings in
+        // setOptionalParams(), so by the time we reach here a valid userGroup is
+        // always a string. Anything else (int, object, etc.) is rejected.
+        if (isset($this->userGroup) && $this->userGroup !== '' && !is_string($this->userGroup)) {
+            throw new \InvalidArgumentException('userGroup must be a string or an array.');
         }
 
         // Validate incentivized if present (must be bool)
@@ -265,7 +274,14 @@ class AuthenticationRequest
                     $this->sub5 = $value;
                     break;
                 case 'userGroup':
-                    $this->userGroup = $value;
+                    if (is_array($value)) {
+                        // Skip empty arrays so they are excluded from the payload.
+                        if (count($value) > 0) {
+                            $this->userGroup = json_encode($value);
+                        }
+                    } else {
+                        $this->userGroup = $value;
+                    }
                     break;
                 case 'mediaSourceName':
                     $this->mediaSourceName = $value;

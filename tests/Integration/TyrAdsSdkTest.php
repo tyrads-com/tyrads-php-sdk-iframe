@@ -170,4 +170,90 @@ class TyrAdsSdkTest extends TestCase
         $this->assertNotFalse(strpos($url, 'token=test+token+with+spaces'));
         $this->assertNotFalse(strpos($url, 'name=widget%2Fwith%2Fspecial+chars'));
     }
+
+    public function testTyrAdsSdkMakeMethodAcceptsCustomApiVersion()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.1');
+
+        $this->assertInstanceOf(TyrAdsSdk::class, $sdk);
+
+        $reflection = new \ReflectionClass($sdk);
+        $configProp = $reflection->getProperty('config');
+        $configProp->setAccessible(true);
+        $config = $configProp->getValue($sdk);
+
+        $this->assertEquals('v4.1', $config->getApiVersion());
+        $this->assertEquals('https://api.tyrads.com/v4.1', $config->getParsedApiUrl());
+    }
+
+    public function testTyrAdsSdkMakeMethodDefaultsApiVersionWhenOmitted()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret');
+
+        $reflection = new \ReflectionClass($sdk);
+        $configProp = $reflection->getProperty('config');
+        $configProp->setAccessible(true);
+        $config = $configProp->getValue($sdk);
+
+        $this->assertEquals('v4.0', $config->getApiVersion());
+        $this->assertEquals('https://api.tyrads.com/v4.0', $config->getParsedApiUrl());
+    }
+
+    public function testTyrAdsSdkMakeMethodWithLanguageAndVersion()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'es', 'v5.0');
+
+        $this->assertInstanceOf(TyrAdsSdk::class, $sdk);
+
+        $reflection = new \ReflectionClass($sdk);
+        $configProp = $reflection->getProperty('config');
+        $configProp->setAccessible(true);
+        $config = $configProp->getValue($sdk);
+
+        $this->assertEquals('es', $config->getLanguage());
+        $this->assertEquals('v5.0', $config->getApiVersion());
+    }
+
+    public function testTyrAdsSdkAuthenticateUsesV4InitializeAuthEndpointByDefault()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret');
+
+        $mockHttp = $this->createMock(\Tyrads\TyradsSdk\HttpClient::class);
+        $mockHttp->expects($this->once())
+            ->method('postJson')
+            ->with('/initialize/auth', $this->anything())
+            ->willReturn(array('json' => array('data' => array('token' => 'tok'))));
+
+        $reflection = new \ReflectionClass($sdk);
+        $httpProp = $reflection->getProperty('http');
+        $httpProp->setAccessible(true);
+        $httpProp->setValue($sdk, $mockHttp);
+
+        $request = new \Tyrads\TyradsSdk\Contract\AuthenticationRequest('user123');
+        $sign = $sdk->authenticate($request);
+
+        $this->assertInstanceOf(\Tyrads\TyradsSdk\Contract\AuthenticationSign::class, $sign);
+        $this->assertEquals('tok', $sign->getToken());
+    }
+
+    public function testTyrAdsSdkAuthenticateUsesLegacyAuthEndpointForV3()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v3.0');
+
+        $mockHttp = $this->createMock(\Tyrads\TyradsSdk\HttpClient::class);
+        $mockHttp->expects($this->once())
+            ->method('postJson')
+            ->with('/auth', $this->anything())
+            ->willReturn(array('json' => array('data' => array('token' => 'tok'))));
+
+        $reflection = new \ReflectionClass($sdk);
+        $httpProp = $reflection->getProperty('http');
+        $httpProp->setAccessible(true);
+        $httpProp->setValue($sdk, $mockHttp);
+
+        $request = new \Tyrads\TyradsSdk\Contract\AuthenticationRequest('user123');
+        $sign = $sdk->authenticate($request);
+
+        $this->assertInstanceOf(\Tyrads\TyradsSdk\Contract\AuthenticationSign::class, $sign);
+    }
 }

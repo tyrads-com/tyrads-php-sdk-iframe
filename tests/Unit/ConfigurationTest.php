@@ -25,7 +25,7 @@ class ConfigurationTest extends TestCase
     {
         $config = new Configuration('test_api_key', 'test_api_secret');
 
-        $this->assertEquals('https://api.tyrads.com/v3.0', $config->getParsedApiUrl());
+        $this->assertEquals('https://api.tyrads.com/v4.0', $config->getParsedApiUrl());
     }
 
     public function testConfigurationReturnsCorrectSdkPlatform()
@@ -114,7 +114,96 @@ class ConfigurationTest extends TestCase
 
         // Test that the configuration returns expected static values
         $this->assertEquals('Web', $config->getSdkPlatform());
-        $this->assertEquals('https://api.tyrads.com/v3.0', $config->getParsedApiUrl());
+        $this->assertEquals('https://api.tyrads.com/v4.0', $config->getParsedApiUrl());
         $this->assertEquals('https://sdk.tyrads.com', $config->getSdkIframeBaseUrl());
+    }
+
+    public function testConfigurationDefaultApiVersionMatchesConstant()
+    {
+        $config = new Configuration('test_key', 'test_secret');
+
+        $this->assertEquals(Configuration::SDK_API_VERSION, $config->getApiVersion());
+        $this->assertEquals('v4.0', $config->getApiVersion());
+    }
+
+    public function testConfigurationAcceptsCustomApiVersion()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', 'v4.1');
+
+        $this->assertEquals('v4.1', $config->getApiVersion());
+    }
+
+    public function testConfigurationCustomApiVersionAppearsInParsedApiUrl()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', 'v4.1');
+
+        $this->assertEquals('https://api.tyrads.com/v4.1', $config->getParsedApiUrl());
+    }
+
+    public function testConfigurationNullApiVersionFallsBackToDefault()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', null);
+
+        $this->assertEquals('v4.0', $config->getApiVersion());
+        $this->assertEquals('https://api.tyrads.com/v4.0', $config->getParsedApiUrl());
+    }
+
+    public function testConfigurationEmptyApiVersionFallsBackToDefault()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', '');
+
+        $this->assertEquals('v4.0', $config->getApiVersion());
+    }
+
+    public function testConfigurationApiVersionDoesNotAffectIframeBaseUrl()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', 'v4.1');
+
+        $this->assertEquals('https://sdk.tyrads.com', $config->getSdkIframeBaseUrl());
+    }
+
+    public function testConfigurationDefaultAuthEndpointIsV4Path()
+    {
+        $config = new Configuration('test_key', 'test_secret');
+
+        // Default version is v4.0, so the auth endpoint is /initialize/auth
+        $this->assertEquals('/initialize/auth', $config->getAuthEndpoint());
+    }
+
+    public function testConfigurationV3AuthEndpointIsLegacyPath()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', 'v3.0');
+
+        $this->assertEquals('/auth', $config->getAuthEndpoint());
+    }
+
+    public function testConfigurationV4AuthEndpointIsInitializePath()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', 'v4.0');
+
+        $this->assertEquals('/initialize/auth', $config->getAuthEndpoint());
+    }
+
+    public function testConfigurationV2AuthEndpointIsLegacyPath()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', 'v2.0');
+
+        // Backward compat: any version below v4.0 uses the legacy /auth path.
+        $this->assertEquals('/auth', $config->getAuthEndpoint());
+    }
+
+    public function testConfigurationV5AuthEndpointIsInitializePath()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', 'v5.0');
+
+        // Forward compat: any version at or above v4.0 uses /initialize/auth.
+        $this->assertEquals('/initialize/auth', $config->getAuthEndpoint());
+    }
+
+    public function testConfigurationV4PointOneAuthEndpointIsInitializePath()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', 'v4.1');
+
+        $this->assertEquals('/initialize/auth', $config->getAuthEndpoint());
     }
 }

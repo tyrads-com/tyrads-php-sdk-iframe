@@ -19,11 +19,12 @@ class Configuration
     const SDK_API_BASE_URL = 'https://api.tyrads.com';
 
     /**
-     * The SDK API version to use.
+     * The default SDK API version to use.
+     * Callers can override this via the Configuration / TyrAdsSdk::make() $apiVersion argument.
      *
      * @var string
      */
-    const SDK_API_VERSION = 'v3.0';
+    const SDK_API_VERSION = 'v4.0';
 
     /**
      * The platform for which the SDK is built.
@@ -54,11 +55,20 @@ class Configuration
      */
     protected $apiSecret;
 
-    public function __construct($apiKey, $apiSecret, $language = 'en')
+    /**
+     * The API version to use for requests.
+     * Defaults to self::SDK_API_VERSION when not provided.
+     *
+     * @var string
+     */
+    protected $apiVersion;
+
+    public function __construct($apiKey, $apiSecret, $language = 'en', $apiVersion = null)
     {
         $this->apiKey = $apiKey;
         $this->apiSecret = $apiSecret;
         $this->language = $language;
+        $this->apiVersion = ($apiVersion !== null && $apiVersion !== '') ? $apiVersion : self::SDK_API_VERSION;
     }
 
     /**
@@ -88,7 +98,36 @@ class Configuration
      */
     public function getParsedApiUrl()
     {
-        return self::SDK_API_BASE_URL . '/' . self::SDK_API_VERSION;
+        return self::SDK_API_BASE_URL . '/' . $this->apiVersion;
+    }
+
+    /**
+     * Get the resolved API version (the override if provided, otherwise the default constant).
+     *
+     * @return string
+     */
+    public function getApiVersion()
+    {
+        return $this->apiVersion;
+    }
+
+    /**
+     * Get the auth endpoint path for the configured API version.
+     *
+     * v3.x and earlier expose POST {baseUrl}/{version}/auth.
+     * v4.0 and later moved the auth route under the initialize controller:
+     * POST {baseUrl}/{version}/initialize/auth.
+     *
+     * @return string
+     */
+    public function getAuthEndpoint()
+    {
+        // Strip a leading 'v' or 'V' so version_compare can read the numeric portion.
+        $numeric = ltrim($this->apiVersion, 'vV');
+        if (version_compare($numeric, '4.0', '>=')) {
+            return '/initialize/auth';
+        }
+        return '/auth';
     }
 
     /**

@@ -21,11 +21,17 @@ class TyrAdsSdk
     public static function make(
         $apiKey = null,
         $apiSecret = null,
-        $language = 'en'
+        $language = 'en',
+        $apiVersion = null
     ) {
         $env = new Env();
 
-        $config = new Configuration($apiKey ?: $env->get(EnvVar::TYRADS_API_KEY), $apiSecret ?: $env->get(EnvVar::TYRADS_API_SECRET), $language);
+        $config = new Configuration(
+            $apiKey ?: $env->get(EnvVar::TYRADS_API_KEY),
+            $apiSecret ?: $env->get(EnvVar::TYRADS_API_SECRET),
+            $language,
+            $apiVersion
+        );
         return new self($config);
     }
 
@@ -53,8 +59,9 @@ class TyrAdsSdk
         // Prepare the authentication data
         $data = $request->getParsedData();
 
-        // Send the authentication request
-        $response = $this->http->postJson('/auth', $data);
+        // Send the authentication request to the version-appropriate endpoint
+        // (v3.x: /auth, v4.0+: /initialize/auth).
+        $response = $this->http->postJson($this->config->getAuthEndpoint(), $data);
         if (isset($response['json']['data']['token'])) {
             return new Contract\AuthenticationSign(
                 $response['json']['data']['token'],
