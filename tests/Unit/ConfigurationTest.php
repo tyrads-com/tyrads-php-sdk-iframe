@@ -39,7 +39,8 @@ class ConfigurationTest extends TestCase
     {
         $config = new Configuration('test_api_key', 'test_api_secret');
 
-        $this->assertEquals('https://sdk.tyrads.com', $config->getSdkIframeBaseUrl());
+        // Default API version is v4.0, so the iframe host is the v4-prefixed subdomain.
+        $this->assertEquals('https://v4.sdk.tyrads.com', $config->getSdkIframeBaseUrl());
     }
 
     public function testConfigurationReturnsSdkVersionFromComposerJson()
@@ -115,7 +116,7 @@ class ConfigurationTest extends TestCase
         // Test that the configuration returns expected static values
         $this->assertEquals('Web', $config->getSdkPlatform());
         $this->assertEquals('https://api.tyrads.com/v4.0', $config->getParsedApiUrl());
-        $this->assertEquals('https://sdk.tyrads.com', $config->getSdkIframeBaseUrl());
+        $this->assertEquals('https://v4.sdk.tyrads.com', $config->getSdkIframeBaseUrl());
     }
 
     public function testConfigurationDefaultApiVersionMatchesConstant()
@@ -155,11 +156,42 @@ class ConfigurationTest extends TestCase
         $this->assertEquals('v4.0', $config->getApiVersion());
     }
 
-    public function testConfigurationApiVersionDoesNotAffectIframeBaseUrl()
+    public function testConfigurationV3IframeBaseUrlIsLegacyHost()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', 'v3.0');
+
+        // v3.x is the only major that keeps the un-prefixed legacy host.
+        $this->assertEquals('https://sdk.tyrads.com', $config->getSdkIframeBaseUrl());
+    }
+
+    public function testConfigurationV4IframeBaseUrlIsVersionPrefixed()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', 'v4.0');
+
+        $this->assertEquals('https://v4.sdk.tyrads.com', $config->getSdkIframeBaseUrl());
+    }
+
+    public function testConfigurationV4PointOneIframeBaseUrlMatchesV4Host()
     {
         $config = new Configuration('test_key', 'test_secret', 'en', 'v4.1');
 
-        $this->assertEquals('https://sdk.tyrads.com', $config->getSdkIframeBaseUrl());
+        // Minor version bumps stay on the same major-versioned host.
+        $this->assertEquals('https://v4.sdk.tyrads.com', $config->getSdkIframeBaseUrl());
+    }
+
+    public function testConfigurationV5IframeBaseUrlIsVersionPrefixed()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', 'v5.0');
+
+        $this->assertEquals('https://v5.sdk.tyrads.com', $config->getSdkIframeBaseUrl());
+    }
+
+    public function testConfigurationV2IframeBaseUrlIsVersionPrefixed()
+    {
+        $config = new Configuration('test_key', 'test_secret', 'en', 'v2.0');
+
+        // Anything other than v3 follows the v{major}.sdk pattern, including legacy majors.
+        $this->assertEquals('https://v2.sdk.tyrads.com', $config->getSdkIframeBaseUrl());
     }
 
     public function testConfigurationDefaultAuthEndpointIsV4Path()

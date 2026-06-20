@@ -30,7 +30,7 @@ class TyrAdsSdkTest extends TestCase
 
         $url = $sdk->iframeUrl($token);
 
-        $this->assertNotFalse(strpos($url, 'https://sdk.tyrads.com'));
+        $this->assertNotFalse(strpos($url, 'https://v4.sdk.tyrads.com'));
         $this->assertNotFalse(strpos($url, 'token=test_token_123'));
     }
 
@@ -41,7 +41,7 @@ class TyrAdsSdkTest extends TestCase
 
         $url = $sdk->iframeUrl($authSign);
 
-        $this->assertNotFalse(strpos($url, 'https://sdk.tyrads.com'));
+        $this->assertNotFalse(strpos($url, 'https://v4.sdk.tyrads.com'));
         $this->assertNotFalse(strpos($url, 'token=test_token_123'));
     }
 
@@ -53,7 +53,7 @@ class TyrAdsSdkTest extends TestCase
 
         $url = $sdk->iframeUrl($token, $deeplinkTo);
 
-        $this->assertNotFalse(strpos($url, 'https://sdk.tyrads.com'));
+        $this->assertNotFalse(strpos($url, 'https://v4.sdk.tyrads.com'));
         $this->assertNotFalse(strpos($url, 'token=test_token_123'));
         $this->assertNotFalse(strpos($url, 'to=surveys'));
     }
@@ -107,7 +107,7 @@ class TyrAdsSdkTest extends TestCase
 
         $url = $sdk->iframePremiumWidget($token);
 
-        $this->assertNotFalse(strpos($url, 'https://sdk.tyrads.com/widget'));
+        $this->assertNotFalse(strpos($url, 'https://v4.sdk.tyrads.com/widget'));
         $this->assertNotFalse(strpos($url, 'token=test_token_123'));
     }
 
@@ -118,7 +118,7 @@ class TyrAdsSdkTest extends TestCase
 
         $url = $sdk->iframePremiumWidget($authSign);
 
-        $this->assertNotFalse(strpos($url, 'https://sdk.tyrads.com/widget'));
+        $this->assertNotFalse(strpos($url, 'https://v4.sdk.tyrads.com/widget'));
         $this->assertNotFalse(strpos($url, 'token=test_token_123'));
     }
 
@@ -130,7 +130,7 @@ class TyrAdsSdkTest extends TestCase
 
         $url = $sdk->iframePremiumWidget($token, $name);
 
-        $this->assertNotFalse(strpos($url, 'https://sdk.tyrads.com/widget'));
+        $this->assertNotFalse(strpos($url, 'https://v4.sdk.tyrads.com/widget'));
         $this->assertNotFalse(strpos($url, 'token=test_token_123'));
         $this->assertNotFalse(strpos($url, 'name=premium-widget'));
     }
@@ -234,6 +234,54 @@ class TyrAdsSdkTest extends TestCase
 
         $this->assertInstanceOf(\Tyrads\TyradsSdk\Contract\AuthenticationSign::class, $sign);
         $this->assertEquals('tok', $sign->getToken());
+    }
+
+    public function testTyrAdsSdkIframeUrlUsesLegacyHostForV3ApiVersion()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v3.0');
+
+        $url = $sdk->iframeUrl('test_token_123');
+
+        $this->assertStringStartsWith('https://sdk.tyrads.com?token=', $url);
+        // Make sure we did NOT accidentally pick the v3 host as a substring of v4.sdk.tyrads.com.
+        $this->assertFalse(strpos($url, 'v4.sdk.tyrads.com'));
+    }
+
+    public function testTyrAdsSdkIframeUrlUsesV4HostForV4ApiVersion()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+
+        $url = $sdk->iframeUrl('test_token_123');
+
+        $this->assertStringStartsWith('https://v4.sdk.tyrads.com?token=', $url);
+    }
+
+    public function testTyrAdsSdkIframeUrlUsesV5HostForV5ApiVersion()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v5.0');
+
+        $url = $sdk->iframeUrl('test_token_123');
+
+        $this->assertStringStartsWith('https://v5.sdk.tyrads.com?token=', $url);
+    }
+
+    public function testTyrAdsSdkPremiumWidgetUrlUsesLegacyHostForV3ApiVersion()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v3.0');
+
+        $url = $sdk->iframePremiumWidget('test_token_123');
+
+        $this->assertStringStartsWith('https://sdk.tyrads.com/widget?token=', $url);
+        $this->assertFalse(strpos($url, 'v4.sdk.tyrads.com'));
+    }
+
+    public function testTyrAdsSdkPremiumWidgetUrlUsesV4HostForV4ApiVersion()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+
+        $url = $sdk->iframePremiumWidget('test_token_123');
+
+        $this->assertStringStartsWith('https://v4.sdk.tyrads.com/widget?token=', $url);
     }
 
     public function testTyrAdsSdkAuthenticateUsesLegacyAuthEndpointForV3()

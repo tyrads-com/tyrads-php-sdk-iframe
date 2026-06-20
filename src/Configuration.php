@@ -182,10 +182,18 @@ class Configuration
     /**
      * Get the base URL for the SDK Iframe.
      *
+     * v3.x keeps the legacy host (sdk.tyrads.com); every other major version is
+     * served from a version-prefixed subdomain (v{major}.sdk.tyrads.com), e.g.
+     * v4.x -> v4.sdk.tyrads.com, v5.x -> v5.sdk.tyrads.com.
+     *
      * @return string
      */
     public function getSdkIframeBaseUrl()
     {
-        return self::SDK_IFRAME_BASE_URL;
+        $major = (int) ltrim($this->apiVersion, 'vV');
+        if ($major === 3) {
+            return self::SDK_IFRAME_BASE_URL;
+        }
+        return str_replace('https://', 'https://v' . $major . '.', self::SDK_IFRAME_BASE_URL);
     }
 }
