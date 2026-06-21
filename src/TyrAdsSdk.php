@@ -77,9 +77,11 @@ class TyrAdsSdk
      *
      * @param \Tyrads\TyradsSdk\Contract\AuthenticationSign|string $authSignOrToken
      * @param string|null $deeplinkTo
+     * @param int|null $placementId Optional placement ID. v4+ only.
      * @return string
+     * @throws \InvalidArgumentException
      */
-    public function iframeUrl($authSignOrToken, $deeplinkTo = null)
+    public function iframeUrl($authSignOrToken, $deeplinkTo = null, $placementId = null)
     {
         // Check if the input is an instance of AuthenticationSign or a string token
         if ($authSignOrToken instanceof Contract\AuthenticationSign) {
@@ -90,9 +92,14 @@ class TyrAdsSdk
             throw new \InvalidArgumentException('Invalid argument: must be an instance of AuthenticationSign or a string token.');
         }
 
+        $this->assertValidPlacementId($placementId);
+
         $url = $this->config->getSdkIframeBaseUrl() . '?token=' . urlencode($token);
         if ($deeplinkTo !== null) {
             $url .= '&to=' . urlencode($deeplinkTo);
+        }
+        if ($placementId !== null) {
+            $url .= '&placementId=' . $placementId;
         }
 
         return $url;
@@ -103,9 +110,11 @@ class TyrAdsSdk
      *
      * @param \Tyrads\TyradsSdk\Contract\AuthenticationSign|string $authSignOrToken
      * @param string|null $name
+     * @param int|null $placementId Optional placement ID. v4+ only.
      * @return string
+     * @throws \InvalidArgumentException
      */
-    public function iframePremiumWidget($authSignOrToken, $name = null)
+    public function iframePremiumWidget($authSignOrToken, $name = null, $placementId = null)
     {
         // Check if the input is an instance of AuthenticationSign or a string token
         if ($authSignOrToken instanceof Contract\AuthenticationSign) {
@@ -116,11 +125,37 @@ class TyrAdsSdk
             throw new \InvalidArgumentException('Invalid argument: must be an instance of AuthenticationSign or a string token.');
         }
 
+        $this->assertValidPlacementId($placementId);
+
         $url = $this->config->getSdkIframeBaseUrl() . '/widget?token=' . urlencode($token);
         if ($name !== null) {
             $url .= '&name=' . urlencode($name);
         }
+        if ($placementId !== null) {
+            $url .= '&placementId=' . $placementId;
+        }
 
         return $url;
+    }
+
+    /**
+     * Ensures the supplied placementId is either null or a positive integer
+     * targeting an iframe version that supports it (v4+).
+     *
+     * @param mixed $placementId
+     * @return void
+     * @throws \InvalidArgumentException
+     */
+    protected function assertValidPlacementId($placementId)
+    {
+        if ($placementId === null) {
+            return;
+        }
+        if (!is_int($placementId) || $placementId <= 0) {
+            throw new \InvalidArgumentException('Invalid placementId argument: must be a positive integer or null.');
+        }
+        if (!$this->config->isV4OrAbove()) {
+            throw new \InvalidArgumentException('placementId is only supported on iframe v4 and above.');
+        }
     }
 }

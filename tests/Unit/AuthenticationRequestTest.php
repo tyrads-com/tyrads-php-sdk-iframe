@@ -440,4 +440,59 @@ class AuthenticationRequestTest extends TestCase
 
         $this->assertTrue($data['incentivized']);
     }
+
+    public function testAuthenticationRequestAcceptsPositiveEngagementId()
+    {
+        $request = new AuthenticationRequest('user123', array('engagementId' => 987654));
+        $request->validate();
+
+        $data = $request->getParsedData();
+        $this->assertArrayHasKey('engagementId', $data);
+        $this->assertSame(987654, $data['engagementId']);
+    }
+
+    public function testAuthenticationRequestOmitsEngagementIdWhenNotProvided()
+    {
+        $request = new AuthenticationRequest('user123');
+        $request->validate();
+
+        $data = $request->getParsedData();
+        $this->assertArrayNotHasKey('engagementId', $data);
+    }
+
+    public function testAuthenticationRequestRejectsZeroEngagementId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('engagementId must be a positive integer.');
+
+        $request = new AuthenticationRequest('user123', array('engagementId' => 0));
+        $request->validate();
+    }
+
+    public function testAuthenticationRequestRejectsNegativeEngagementId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('engagementId must be a positive integer.');
+
+        $request = new AuthenticationRequest('user123', array('engagementId' => -1));
+        $request->validate();
+    }
+
+    public function testAuthenticationRequestRejectsNonIntegerEngagementId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('engagementId must be a positive integer.');
+
+        $request = new AuthenticationRequest('user123', array('engagementId' => '123'));
+        $request->validate();
+    }
+
+    public function testAuthenticationRequestRejectsFloatEngagementId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('engagementId must be a positive integer.');
+
+        $request = new AuthenticationRequest('user123', array('engagementId' => 1.5));
+        $request->validate();
+    }
 }

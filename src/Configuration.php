@@ -196,4 +196,20 @@ class Configuration
         }
         return str_replace('https://', 'https://v' . $major . '.', self::SDK_IFRAME_BASE_URL);
     }
+
+    /**
+     * Whether the configured API version is v4 or later. v3 and earlier return
+     * false; unrecognized versions are treated as the latest supported version
+     * and return true.
+     *
+     * @return bool
+     */
+    public function isV4OrAbove()
+    {
+        $numeric = ltrim($this->apiVersion, 'vV');
+        if ($numeric === '') {
+            return true;
+        }
+        return version_compare($numeric, '4.0', '>=');
+    }
 }

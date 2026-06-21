@@ -304,4 +304,192 @@ class TyrAdsSdkTest extends TestCase
 
         $this->assertInstanceOf(\Tyrads\TyradsSdk\Contract\AuthenticationSign::class, $sign);
     }
+
+    public function testTyrAdsSdkIframeUrlAppendsPlacementIdOnV4()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+
+        $url = $sdk->iframeUrl('tok', null, 123);
+
+        $this->assertEquals('https://v4.sdk.tyrads.com?token=tok&placementId=123', $url);
+    }
+
+    public function testTyrAdsSdkIframeUrlAppendsPlacementIdAlongsideDeeplink()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+
+        $url = $sdk->iframeUrl('tok', 'offers/3454', 555);
+
+        $this->assertEquals('https://v4.sdk.tyrads.com?token=tok&to=offers%2F3454&placementId=555', $url);
+    }
+
+    public function testTyrAdsSdkIframeUrlAppendsPlacementIdOnV5()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v5.0');
+
+        $url = $sdk->iframeUrl('tok', null, 42);
+
+        $this->assertEquals('https://v5.sdk.tyrads.com?token=tok&placementId=42', $url);
+    }
+
+    public function testTyrAdsSdkIframeUrlOmitsPlacementIdWhenNotProvided()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+
+        $url = $sdk->iframeUrl('tok');
+
+        $this->assertEquals('https://v4.sdk.tyrads.com?token=tok', $url);
+    }
+
+    public function testTyrAdsSdkIframeUrlRejectsZeroPlacementId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid placementId argument: must be a positive integer or null.');
+
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+        $sdk->iframeUrl('tok', null, 0);
+    }
+
+    public function testTyrAdsSdkIframeUrlRejectsNegativePlacementId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid placementId argument: must be a positive integer or null.');
+
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+        $sdk->iframeUrl('tok', null, -1);
+    }
+
+    public function testTyrAdsSdkIframeUrlRejectsNonIntegerPlacementId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid placementId argument: must be a positive integer or null.');
+
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+        $sdk->iframeUrl('tok', null, '123');
+    }
+
+    public function testTyrAdsSdkIframeUrlRejectsPlacementIdOnV3Sdk()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('placementId is only supported on iframe v4 and above.');
+
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v3.0');
+        $sdk->iframeUrl('tok', null, 123);
+    }
+
+    public function testTyrAdsSdkIframeUrlOnV3StillWorksWithoutPlacementId()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v3.0');
+
+        $url = $sdk->iframeUrl('tok');
+
+        $this->assertEquals('https://sdk.tyrads.com?token=tok', $url);
+    }
+
+    public function testTyrAdsSdkPremiumWidgetAppendsPlacementIdOnV4()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+
+        $url = $sdk->iframePremiumWidget('tok', null, 123);
+
+        $this->assertEquals('https://v4.sdk.tyrads.com/widget?token=tok&placementId=123', $url);
+    }
+
+    public function testTyrAdsSdkPremiumWidgetAppendsPlacementIdAlongsideName()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+
+        $url = $sdk->iframePremiumWidget('tok', 'rewards', 555);
+
+        $this->assertEquals('https://v4.sdk.tyrads.com/widget?token=tok&name=rewards&placementId=555', $url);
+    }
+
+    public function testTyrAdsSdkPremiumWidgetRejectsPlacementIdOnV3Sdk()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('placementId is only supported on iframe v4 and above.');
+
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v3.0');
+        $sdk->iframePremiumWidget('tok', null, 123);
+    }
+
+    public function testTyrAdsSdkPremiumWidgetRejectsInvalidPlacementId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid placementId argument: must be a positive integer or null.');
+
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+        $sdk->iframePremiumWidget('tok', null, -5);
+    }
+
+    public function testTyrAdsSdkAuthenticateForwardsEngagementIdInV4Body()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+
+        $mockHttp = $this->createMock(\Tyrads\TyradsSdk\HttpClient::class);
+        $mockHttp->expects($this->once())
+            ->method('postJson')
+            ->with(
+                '/initialize/auth',
+                $this->callback(function ($body) {
+                    return isset($body['engagementId']) && $body['engagementId'] === 987654;
+                })
+            )
+            ->willReturn(array('json' => array('data' => array('token' => 'tok'))));
+
+        $reflection = new \ReflectionClass($sdk);
+        $httpProp = $reflection->getProperty('http');
+        $httpProp->setAccessible(true);
+        $httpProp->setValue($sdk, $mockHttp);
+
+        $request = new \Tyrads\TyradsSdk\Contract\AuthenticationRequest('user123', array('engagementId' => 987654));
+        $sign = $sdk->authenticate($request);
+
+        $this->assertInstanceOf(\Tyrads\TyradsSdk\Contract\AuthenticationSign::class, $sign);
+    }
+
+    public function testTyrAdsSdkAuthenticateForwardsEngagementIdInV3Body()
+    {
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v3.0');
+
+        $mockHttp = $this->createMock(\Tyrads\TyradsSdk\HttpClient::class);
+        $mockHttp->expects($this->once())
+            ->method('postJson')
+            ->with(
+                '/auth',
+                $this->callback(function ($body) {
+                    return isset($body['engagementId']) && $body['engagementId'] === 123456;
+                })
+            )
+            ->willReturn(array('json' => array('data' => array('token' => 'tok'))));
+
+        $reflection = new \ReflectionClass($sdk);
+        $httpProp = $reflection->getProperty('http');
+        $httpProp->setAccessible(true);
+        $httpProp->setValue($sdk, $mockHttp);
+
+        $request = new \Tyrads\TyradsSdk\Contract\AuthenticationRequest('user123', array('engagementId' => 123456));
+        $sign = $sdk->authenticate($request);
+
+        $this->assertInstanceOf(\Tyrads\TyradsSdk\Contract\AuthenticationSign::class, $sign);
+    }
+
+    public function testTyrAdsSdkAuthenticateRejectsInvalidEngagementIdBeforeHttpCall()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('engagementId must be a positive integer.');
+
+        $sdk = TyrAdsSdk::make('test_key', 'test_secret', 'en', 'v4.0');
+
+        $mockHttp = $this->createMock(\Tyrads\TyradsSdk\HttpClient::class);
+        $mockHttp->expects($this->never())->method('postJson');
+
+        $reflection = new \ReflectionClass($sdk);
+        $httpProp = $reflection->getProperty('http');
+        $httpProp->setAccessible(true);
+        $httpProp->setValue($sdk, $mockHttp);
+
+        $request = new \Tyrads\TyradsSdk\Contract\AuthenticationRequest('user123', array('engagementId' => -1));
+        $sdk->authenticate($request);
+    }
 }

@@ -148,6 +148,13 @@ class AuthenticationRequest
     protected $mediaCampaignName;
 
     /**
+     * The publisher engagement ID this session is attributed to.
+     *
+     * @var int
+     */
+    protected $engagementId;
+
+    /**
      * Constructor to initialize properties.
      * Only $publisherUserId is required.
      * The rest are optional and can be set later.
@@ -235,6 +242,13 @@ class AuthenticationRequest
         if (isset($this->incentivized) && !is_bool($this->incentivized)) {
             throw new \InvalidArgumentException('incentivized must be a boolean.');
         }
+
+        // Validate engagementId if present (must be positive integer)
+        if (isset($this->engagementId)) {
+            if (!is_int($this->engagementId) || $this->engagementId <= 0) {
+                throw new \InvalidArgumentException('engagementId must be a positive integer.');
+            }
+        }
     }
 
     /**
@@ -310,6 +324,9 @@ class AuthenticationRequest
                 case 'mediaCampaignName':
                     $this->mediaCampaignName = $value;
                     break;
+                case 'engagementId':
+                    $this->engagementId = $value;
+                    break;
             }
         }
     }
@@ -345,6 +362,7 @@ class AuthenticationRequest
             'mediaCreativeName' => $this->mediaCreativeName,
             'mediaCreativeId' => $this->mediaCreativeId,
             'mediaCampaignName' => $this->mediaCampaignName,
+            'engagementId' => $this->engagementId,
         );
 
         foreach ($optionalFields as $key => $value) {

@@ -238,4 +238,32 @@ class ConfigurationTest extends TestCase
 
         $this->assertEquals('/initialize/auth', $config->getAuthEndpoint());
     }
+
+    public function testConfigurationIsV4OrAboveReturnsFalseForLegacyVersions()
+    {
+        $this->assertFalse((new Configuration('k', 's', 'en', 'v1.0'))->isV4OrAbove());
+        $this->assertFalse((new Configuration('k', 's', 'en', 'v2.0'))->isV4OrAbove());
+        $this->assertFalse((new Configuration('k', 's', 'en', 'v3.0'))->isV4OrAbove());
+        $this->assertFalse((new Configuration('k', 's', 'en', 'v3.9'))->isV4OrAbove());
+    }
+
+    public function testConfigurationIsV4OrAboveReturnsTrueForV4AndLater()
+    {
+        $this->assertTrue((new Configuration('k', 's', 'en', 'v4.0'))->isV4OrAbove());
+        $this->assertTrue((new Configuration('k', 's', 'en', 'v4.1'))->isV4OrAbove());
+        $this->assertTrue((new Configuration('k', 's', 'en', 'v5.0'))->isV4OrAbove());
+        $this->assertTrue((new Configuration('k', 's', 'en', 'v10.0'))->isV4OrAbove());
+    }
+
+    public function testConfigurationIsV4OrAboveAcceptsVersionsWithoutVPrefix()
+    {
+        $this->assertFalse((new Configuration('k', 's', 'en', '3.0'))->isV4OrAbove());
+        $this->assertTrue((new Configuration('k', 's', 'en', '4.0'))->isV4OrAbove());
+    }
+
+    public function testConfigurationIsV4OrAboveDefaultsToTrueForDefaultVersion()
+    {
+        $config = new Configuration('k', 's');
+        $this->assertTrue($config->isV4OrAbove());
+    }
 }
