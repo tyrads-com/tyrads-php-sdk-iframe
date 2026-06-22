@@ -77,6 +77,9 @@ class AuthenticationRequest
     /**
      * The user group associated with the authentication request.
      *
+     * Accepts a string or an associative array as input. Arrays are JSON-encoded
+     * internally so the value sent on the wire is always a string.
+     *
      * @var string
      */
     protected $userGroup;
@@ -145,6 +148,13 @@ class AuthenticationRequest
     protected $mediaCampaignName;
 
     /**
+     * The publisher engagement ID this session is attributed to.
+     *
+     * @var int
+     */
+    protected $engagementId;
+
+    /**
      * Constructor to initialize properties.
      * Only $publisherUserId is required.
      * The rest are optional and can be set later.
@@ -206,7 +216,6 @@ class AuthenticationRequest
             'sub3',
             'sub4',
             'sub5',
-            'userGroup',
             'mediaSourceName',
             'mediaSourceId',
             'mediaSubSourceId',
@@ -222,9 +231,23 @@ class AuthenticationRequest
             }
         }
 
+        // Validate userGroup if present. Arrays are converted to JSON strings in
+        // setOptionalParams(), so by the time we reach here a valid userGroup is
+        // always a string. Anything else (int, object, etc.) is rejected.
+        if (isset($this->userGroup) && $this->userGroup !== '' && !is_string($this->userGroup)) {
+            throw new \InvalidArgumentException('userGroup must be a string or an array.');
+        }
+
         // Validate incentivized if present (must be bool)
         if (isset($this->incentivized) && !is_bool($this->incentivized)) {
             throw new \InvalidArgumentException('incentivized must be a boolean.');
+        }
+
+        // Validate engagementId if present (must be positive integer)
+        if (isset($this->engagementId)) {
+            if (!is_int($this->engagementId) || $this->engagementId <= 0) {
+                throw new \InvalidArgumentException('engagementId must be a positive integer.');
+            }
         }
     }
 
@@ -265,7 +288,14 @@ class AuthenticationRequest
                     $this->sub5 = $value;
                     break;
                 case 'userGroup':
-                    $this->userGroup = $value;
+                    if (is_array($value)) {
+                        // Skip empty arrays so they are excluded from the payload.
+                        if (count($value) > 0) {
+                            $this->userGroup = json_encode($value);
+                        }
+                    } else {
+                        $this->userGroup = $value;
+                    }
                     break;
                 case 'mediaSourceName':
                     $this->mediaSourceName = $value;
@@ -293,6 +323,9 @@ class AuthenticationRequest
                     break;
                 case 'mediaCampaignName':
                     $this->mediaCampaignName = $value;
+                    break;
+                case 'engagementId':
+                    $this->engagementId = $value;
                     break;
             }
         }
@@ -329,6 +362,7 @@ class AuthenticationRequest
             'mediaCreativeName' => $this->mediaCreativeName,
             'mediaCreativeId' => $this->mediaCreativeId,
             'mediaCampaignName' => $this->mediaCampaignName,
+            'engagementId' => $this->engagementId,
         );
 
         foreach ($optionalFields as $key => $value) {

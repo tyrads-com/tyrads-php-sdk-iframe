@@ -261,4 +261,238 @@ class AuthenticationRequestTest extends TestCase
         $this->assertArrayNotHasKey('gender', $data);
         $this->assertEquals(25, $data['age']);
     }
+
+    public function testAuthenticationRequestSerializesUserGroupArrayToJsonString()
+    {
+        $userGroup = array('tier' => 'gold', 'segment' => 'premium', 'score' => 95);
+        $request = new AuthenticationRequest('user123', array('userGroup' => $userGroup));
+
+        $request->validate();
+        $data = $request->getParsedData();
+
+        $this->assertArrayHasKey('userGroup', $data);
+        $this->assertTrue(is_string($data['userGroup']));
+        $this->assertEquals(json_encode($userGroup), $data['userGroup']);
+        $this->assertEquals($userGroup, json_decode($data['userGroup'], true));
+    }
+
+    public function testAuthenticationRequestSerializesNestedUserGroupArrayToJsonString()
+    {
+        $userGroup = array(
+            'profile' => array('tier' => 'gold', 'flags' => array('vip', 'beta')),
+            'region' => 'apac',
+        );
+        $request = new AuthenticationRequest('user123', array('userGroup' => $userGroup));
+
+        $request->validate();
+        $data = $request->getParsedData();
+
+        $this->assertTrue(is_string($data['userGroup']));
+        $this->assertEquals($userGroup, json_decode($data['userGroup'], true));
+    }
+
+    public function testAuthenticationRequestStillAcceptsUserGroupAsString()
+    {
+        $request = new AuthenticationRequest('user123', array('userGroup' => 'vip'));
+
+        $request->validate();
+        $data = $request->getParsedData();
+
+        $this->assertSame('vip', $data['userGroup']);
+    }
+
+    public function testAuthenticationRequestStillAcceptsUserGroupAsAlreadyJsonEncodedString()
+    {
+        $preEncoded = '{"tier":"gold"}';
+        $request = new AuthenticationRequest('user123', array('userGroup' => $preEncoded));
+
+        $request->validate();
+        $data = $request->getParsedData();
+
+        // Pass-through: no double encoding
+        $this->assertSame($preEncoded, $data['userGroup']);
+    }
+
+    public function testAuthenticationRequestRejectsUserGroupAsInteger()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $request = new AuthenticationRequest('user123', array('userGroup' => 42));
+        $request->validate();
+    }
+
+    public function testAuthenticationRequestRejectsUserGroupAsStdClass()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $request = new AuthenticationRequest('user123', array('userGroup' => new \stdClass()));
+        $request->validate();
+    }
+
+    public function testAuthenticationRequestExcludesEmptyUserGroupArrayFromParsedData()
+    {
+        $request = new AuthenticationRequest('user123', array('userGroup' => array()));
+        $data = $request->getParsedData();
+
+        $this->assertArrayNotHasKey('userGroup', $data);
+    }
+
+    public function testAuthenticationRequestExcludesEmptyUserGroupStringFromParsedData()
+    {
+        $request = new AuthenticationRequest('user123', array('userGroup' => ''));
+        $data = $request->getParsedData();
+
+        $this->assertArrayNotHasKey('userGroup', $data);
+    }
+
+    public function testAuthenticationRequestPersistsAllSubFields()
+    {
+        $params = array(
+            'sub1' => 's1',
+            'sub2' => 's2',
+            'sub3' => 's3',
+            'sub4' => 's4',
+            'sub5' => 's5',
+        );
+        $request = new AuthenticationRequest('user123', $params);
+        $request->validate();
+        $data = $request->getParsedData();
+
+        foreach ($params as $key => $expected) {
+            $this->assertArrayHasKey($key, $data);
+            $this->assertEquals($expected, $data[$key]);
+        }
+    }
+
+    public function testAuthenticationRequestRejectsNonStringSubFields()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $request = new AuthenticationRequest('user123', array('sub3' => array('not', 'allowed')));
+        $request->validate();
+    }
+
+    public function testAuthenticationRequestPersistsAllMediaFields()
+    {
+        $params = array(
+            'mediaSourceName'   => 'tiktok',
+            'mediaSourceId'     => 'src_001',
+            'mediaSubSourceId'  => 'sub_001',
+            'mediaAdsetName'    => 'adset_a',
+            'mediaAdsetId'      => 'adset_001',
+            'mediaCreativeName' => 'creative_a',
+            'mediaCreativeId'   => 'creative_001',
+            'mediaCampaignName' => 'spring_launch',
+        );
+        $request = new AuthenticationRequest('user123', $params);
+        $request->validate();
+        $data = $request->getParsedData();
+
+        foreach ($params as $key => $expected) {
+            $this->assertArrayHasKey($key, $data);
+            $this->assertEquals($expected, $data[$key]);
+        }
+    }
+
+    public function testAuthenticationRequestRejectsNonStringMediaSourceId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $request = new AuthenticationRequest('user123', array('mediaSourceId' => 12345));
+        $request->validate();
+    }
+
+    public function testAuthenticationRequestExcludesEmptyMediaFieldsFromParsedData()
+    {
+        $request = new AuthenticationRequest('user123', array(
+            'mediaSourceName' => '',
+            'mediaAdsetId'    => 'adset_001',
+        ));
+        $data = $request->getParsedData();
+
+        $this->assertArrayNotHasKey('mediaSourceName', $data);
+        $this->assertEquals('adset_001', $data['mediaAdsetId']);
+    }
+
+    public function testAuthenticationRequestPersistsIncentivizedTrue()
+    {
+        $request = new AuthenticationRequest('user123', array('incentivized' => true));
+        $request->validate();
+        $data = $request->getParsedData();
+
+        $this->assertArrayHasKey('incentivized', $data);
+        $this->assertTrue($data['incentivized']);
+    }
+
+    public function testAuthenticationRequestPersistsIncentivizedFalse()
+    {
+        $request = new AuthenticationRequest('user123', array('incentivized' => false));
+        $request->validate();
+        $data = $request->getParsedData();
+
+        // false must be kept (not filtered out by the empty-string check)
+        $this->assertArrayHasKey('incentivized', $data);
+        $this->assertFalse($data['incentivized']);
+    }
+
+    public function testAuthenticationRequestIncentivizedIsCoercedToBoolean()
+    {
+        // setOptionalParams casts to bool, so validate() should pass
+        $request = new AuthenticationRequest('user123', array('incentivized' => 1));
+        $request->validate();
+        $data = $request->getParsedData();
+
+        $this->assertTrue($data['incentivized']);
+    }
+
+    public function testAuthenticationRequestAcceptsPositiveEngagementId()
+    {
+        $request = new AuthenticationRequest('user123', array('engagementId' => 987654));
+        $request->validate();
+
+        $data = $request->getParsedData();
+        $this->assertArrayHasKey('engagementId', $data);
+        $this->assertSame(987654, $data['engagementId']);
+    }
+
+    public function testAuthenticationRequestOmitsEngagementIdWhenNotProvided()
+    {
+        $request = new AuthenticationRequest('user123');
+        $request->validate();
+
+        $data = $request->getParsedData();
+        $this->assertArrayNotHasKey('engagementId', $data);
+    }
+
+    public function testAuthenticationRequestRejectsZeroEngagementId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('engagementId must be a positive integer.');
+
+        $request = new AuthenticationRequest('user123', array('engagementId' => 0));
+        $request->validate();
+    }
+
+    public function testAuthenticationRequestRejectsNegativeEngagementId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('engagementId must be a positive integer.');
+
+        $request = new AuthenticationRequest('user123', array('engagementId' => -1));
+        $request->validate();
+    }
+
+    public function testAuthenticationRequestRejectsNonIntegerEngagementId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('engagementId must be a positive integer.');
+
+        $request = new AuthenticationRequest('user123', array('engagementId' => '123'));
+        $request->validate();
+    }
+
+    public function testAuthenticationRequestRejectsFloatEngagementId()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('engagementId must be a positive integer.');
+
+        $request = new AuthenticationRequest('user123', array('engagementId' => 1.5));
+        $request->validate();
+    }
 }
